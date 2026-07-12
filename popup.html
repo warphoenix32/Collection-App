@@ -25,7 +25,7 @@
 </head>
 <body>
   <h1>Collection Platform</h1>
-  <div class="version">Discord Reference Adapter · v3.5.0 LTS</div>
+  <div class="version">Discord Reference Adapter · v3.5.1 LTS</div>
 
   <label for="sourceMode">Acquisition strategy</label>
   <select id="sourceMode">
@@ -69,11 +69,30 @@
     <option value="24h">Last 24 hours</option>
     <option value="48h">Last 48 hours</option>
     <option value="7d">Last 7 days</option>
+    <option value="30d">Last 30 days</option>
+    <option value="90d">Last 90 days</option>
+    <option value="1y">Last 1 year</option>
+    <option value="2y">Last 2 years</option>
+    <option value="3y">Last 3 years</option>
     <option value="custom">Custom range</option>
   </select>
   <div id="customRange" class="row" hidden>
     <div><label for="start">Start</label><input id="start" type="datetime-local"></div>
     <div><label for="end">End</label><input id="end" type="datetime-local"></div>
+  </div>
+
+  <div id="runtimeFields">
+    <label for="runtimeLimit">Historical acquisition runtime</label>
+    <select id="runtimeLimit">
+      <option value="3600000">1 hour</option>
+      <option value="10800000" selected>3 hours (default)</option>
+      <option value="21600000">6 hours</option>
+      <option value="43200000">12 hours</option>
+      <option value="86400000">24 hours</option>
+      <option value="custom">Custom minutes</option>
+    </select>
+    <input id="runtimeCustomMinutes" type="number" min="5" max="1440" step="5" value="180" hidden>
+    <div class="hint">The collector completes the active loading cycle before stopping. The runtime limit applies per conversation, including each batch target.</div>
   </div>
 
   <label for="format">Output</label>
