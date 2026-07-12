@@ -41,7 +41,7 @@
     const startedAt = Date.now();
     let collectionReport = { complete: true, attempted: false, warnings: [] };
     if (options.loadOlder && options.startIso) {
-      collectionReport = await DCE.discord.collector.loadOlderMessagesUntil(options.startIso);
+      collectionReport = await DCE.discord.collector.loadOlderMessagesUntil(options.startIso, { maxRuntimeMs: options.maxRuntimeMs });
     }
     const rawMessages = DCE.discord.collector.parseLoadedMessages()
       .filter(message => messageInRange(message, options.startIso, options.endIso));
