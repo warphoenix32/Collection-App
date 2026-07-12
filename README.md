@@ -1,4 +1,4 @@
-# Collection Platform — Discord Reference Adapter v3.5.0 LTS
+# Collection Platform — Discord Reference Adapter v3.5.1 LTS
 
 ## BLUF
 
@@ -12,7 +12,10 @@ This is the final feature release of the Discord adapter. It preserves current-c
 - Saved collection profiles
 - JSON and Markdown exports using Conversation Schema 2.0.0
 - Reliable historical acquisition that accumulates messages throughout Discord DOM virtualization
-- Adaptive waits, bounded stall recovery, navigation retries, checkpoints, and honest coverage metadata
+- Adaptive waits, recovery actions, navigation retries, checkpoints, and honest coverage metadata
+- Relative recall presets from 24 hours through three years
+- Exact custom start and end timestamps
+- Configurable historical runtime from five minutes through 24 hours, with a three-hour default
 
 ## Retired capability
 
@@ -29,9 +32,9 @@ Targeted Collection/native-search automation is not included. It was retired bec
 
 ## Historical acquisition behavior
 
-Discord virtualizes messages: older rendered nodes can disappear as additional history loads. v3.5.0 parses and accumulates every rendered window during acquisition, then deduplicates the complete in-session buffer before export.
+Discord virtualizes messages: older rendered nodes can disappear as additional history loads. v3.5.1 parses and accumulates every rendered window during acquisition, then deduplicates the complete in-session buffer before export.
 
-The adapter performs bounded recovery when Discord stalls. An incomplete result remains exportable but is explicitly reported as partial with coverage metadata and warnings.
+The adapter performs recovery when Discord stalls and continues until it reaches the requested start date or the operator-selected runtime budget. The default budget is three hours per conversation and can be set from five minutes through 24 hours. Runtime expiration is evaluated between loading cycles so the active cycle completes cleanly. Acquisition is not terminated by attempt count, throughput, or efficiency metrics. An incomplete result remains exportable but is explicitly reported as partial with coverage metadata and warnings.
 
 ## Architectural constraints
 
