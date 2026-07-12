@@ -29,3 +29,14 @@ A requested historical range must either:
 - produce a usable partial export that accurately reports the earliest acquired timestamp, recovery activity, and incomplete coverage.
 
 It must never report an initial viewport as a complete multi-year collection.
+
+## v3.5.1 live validation
+
+- Confirm the default historical runtime shows three hours.
+- Confirm 1, 3, 6, 12, and 24-hour presets serialize into the collection request.
+- Confirm custom runtime rejects values below 5 or above 1,440 minutes.
+- Confirm 30-day, 90-day, one-year, two-year, and three-year recall presets calculate valid UTC start timestamps.
+- Confirm runtime expiration reports `stopReason: runtime-limit` and exports accumulated messages.
+- Confirm no attempt-limit or rate-based termination occurs.
+- Confirm repeated stalls invoke rotating recovery without independently ending the run.
+- Confirm saved profiles preserve `maxRuntimeMs`.
