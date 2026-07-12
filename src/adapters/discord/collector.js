@@ -39,12 +39,24 @@
     return acquisitionBuffer.size;
   }
 
+  function bufferedTimeBounds() {
+    const timestamps = Array.from(acquisitionBuffer.values())
+      .map(message => Date.parse(message.timestamp)).filter(Number.isFinite);
+    return {
+      earliest: timestamps.length ? Math.min(...timestamps) : null,
+      latest: timestamps.length ? Math.max(...timestamps) : null
+    };
+  }
+
   function getRenderedSnapshot() {
     const timestamps = Array.from(document.querySelectorAll(`${S.message} time[datetime]`))
       .map(node => Date.parse(node.getAttribute("datetime"))).filter(Number.isFinite);
+    const bounds = bufferedTimeBounds();
     return {
       earliest: timestamps.length ? Math.min(...timestamps) : null,
       latest: timestamps.length ? Math.max(...timestamps) : null,
+      earliestAcquired: bounds.earliest,
+      latestAcquired: bounds.latest,
       renderedCount: document.querySelectorAll(S.message).length,
       bufferedCount: acquisitionBuffer.size,
       scrollHeight: getMessageScroller()?.scrollHeight || 0
@@ -85,9 +97,8 @@
       async () => { scroller.dispatchEvent(new KeyboardEvent("keydown", { key: "PageUp", code: "PageUp", bubbles: true })); },
       async () => { window.dispatchEvent(new Event("focus")); scroller.click?.(); await scrollToOldest(scroller); }
     ];
-    const mode = modes[recoveryIndex % modes.length];
-    await mode();
-    await sleep(500 + Math.min(recoveryIndex * 250, 1500));
+    await modes[recoveryIndex % modes.length]();
+    await sleep(500 + Math.min((recoveryIndex % modes.length) * 250, 1500));
   }
 
   function coverageFor(cutoff, earliest, latest) {
@@ -102,6 +113,15 @@
     };
   }
 
+  function resolveMaxRuntimeMs(requested) {
+    const numeric = Number(requested);
+    if (!Number.isFinite(numeric) || numeric <= 0) return DCE.config.acquisitionDefaultMaxRuntimeMs;
+    return Math.min(
+      Math.max(Math.round(numeric), DCE.config.acquisitionMinimumMaxRuntimeMs),
+      DCE.config.acquisitionMaximumMaxRuntimeMs
+    );
+  }
+
   async function persistCheckpoint(report) {
     try {
       await chrome.storage.local.set({
@@ -111,7 +131,9 @@
           cutoff: report.coverage?.requestedStart || null,
           earliestLoaded: report.earliestLoaded,
           bufferedMessages: acquisitionBuffer.size,
-          attempts: report.attempts,
+          elapsedMs: report.elapsedMs,
+          maxRuntimeMs: report.maxRuntimeMs,
+          cycles: report.cycles,
           recoveries: report.recoveries
         }
       });
@@ -120,12 +142,15 @@
     }
   }
 
-  async function loadOlderMessagesUntil(startIso) {
+  async function loadOlderMessagesUntil(startIso, policy = {}) {
     acquisitionBuffer = new Map();
+    const maxRuntimeMs = resolveMaxRuntimeMs(policy.maxRuntimeMs);
+    const startedAt = Date.now();
     const report = {
-      attempted: true, complete: false, attempts: 0, recoveries: 0,
+      attempted: true, complete: false, cycles: 0, recoveries: 0,
       stopReason: null, earliestLoaded: null, latestLoaded: null,
-      messagesAccumulated: 0, warnings: [], coverage: null
+      messagesAccumulated: 0, warnings: [], coverage: null,
+      startedAt: new Date(startedAt).toISOString(), elapsedMs: 0, maxRuntimeMs
     };
     const cutoff = Date.parse(startIso);
     const scroller = getMessageScroller();
@@ -144,14 +169,21 @@
     let snapshot = getRenderedSnapshot();
     let consecutiveStalls = 0;
 
-    for (let attempt = 0; attempt < DCE.config.loadOlderMaxAttempts; attempt += 1) {
-      report.attempts = attempt + 1;
-      if (snapshot.earliest !== null && snapshot.earliest <= cutoff) {
+    while (true) {
+      if (snapshot.earliestAcquired !== null && snapshot.earliestAcquired <= cutoff) {
         report.complete = true;
         report.stopReason = "cutoff-reached";
         break;
       }
 
+      // Runtime is evaluated before beginning a new cycle. A cycle already in progress is always allowed to finish cleanly.
+      if (Date.now() - startedAt >= maxRuntimeMs) {
+        report.stopReason = "runtime-limit";
+        report.warnings.push(`The historical acquisition runtime limit of ${Math.round(maxRuntimeMs / 60000)} minutes was reached before the requested start time.`);
+        break;
+      }
+
+      report.cycles += 1;
       const before = snapshot;
       await scrollToOldest(scroller);
       const progress = await waitForProgress(before, DCE.config.loadOlderMaxWaitMs);
@@ -161,43 +193,44 @@
         consecutiveStalls = 0;
       } else {
         consecutiveStalls += 1;
-        DCE.logger.warn("acquisition.stall", { attempt: report.attempts, consecutiveStalls, earliest: snapshot.earliest, buffered: snapshot.bufferedCount });
-        if (consecutiveStalls >= DCE.config.loadOlderSoftStallLimit && report.recoveries < DCE.config.loadOlderMaxRecoveries) {
+        DCE.logger.warn("acquisition.stall", { cycle: report.cycles, consecutiveStalls, earliest: snapshot.earliestAcquired, buffered: snapshot.bufferedCount });
+        if (consecutiveStalls >= DCE.config.loadOlderSoftStallLimit) {
           await recoverFromStall(scroller, report.recoveries);
           report.recoveries += 1;
           consecutiveStalls = 0;
           accumulateRenderedMessages();
           snapshot = getRenderedSnapshot();
-          DCE.logger.info("acquisition.recovered", { recoveries: report.recoveries, earliest: snapshot.earliest, buffered: snapshot.bufferedCount });
-        } else if (consecutiveStalls >= DCE.config.loadOlderHardStallLimit || report.recoveries >= DCE.config.loadOlderMaxRecoveries) {
-          report.stopReason = "loading-stalled-after-recovery";
-          report.warnings.push("Discord stopped yielding older messages after bounded recovery attempts.");
-          break;
+          DCE.logger.info("acquisition.recovery.executed", { recoveries: report.recoveries, earliest: snapshot.earliestAcquired, buffered: snapshot.bufferedCount });
         }
       }
 
-      if (report.attempts % DCE.config.loadOlderProgressLogInterval === 0) {
-        report.earliestLoaded = snapshot.earliest ? new Date(snapshot.earliest).toISOString() : null;
-        report.latestLoaded = snapshot.latest ? new Date(snapshot.latest).toISOString() : null;
+      if (report.cycles % DCE.config.loadOlderProgressLogInterval === 0) {
+        report.elapsedMs = Date.now() - startedAt;
+        report.earliestLoaded = snapshot.earliestAcquired ? new Date(snapshot.earliestAcquired).toISOString() : null;
+        report.latestLoaded = snapshot.latestAcquired ? new Date(snapshot.latestAcquired).toISOString() : null;
         report.messagesAccumulated = acquisitionBuffer.size;
-        report.coverage = coverageFor(cutoff, snapshot.earliest, snapshot.latest);
+        report.coverage = coverageFor(cutoff, snapshot.earliestAcquired, snapshot.latestAcquired);
         await persistCheckpoint(report);
-        DCE.logger.info("acquisition.progress", { attempts: report.attempts, recoveries: report.recoveries, earliest: report.earliestLoaded, buffered: report.messagesAccumulated });
+        DCE.logger.info("acquisition.progress", {
+          cycles: report.cycles,
+          recoveries: report.recoveries,
+          elapsedMs: report.elapsedMs,
+          maxRuntimeMs,
+          earliest: report.earliestLoaded,
+          buffered: report.messagesAccumulated
+        });
       }
     }
 
     accumulateRenderedMessages();
     snapshot = getRenderedSnapshot();
-    report.earliestLoaded = snapshot.earliest ? new Date(snapshot.earliest).toISOString() : null;
-    report.latestLoaded = snapshot.latest ? new Date(snapshot.latest).toISOString() : null;
+    report.elapsedMs = Date.now() - startedAt;
+    report.finishedAt = new Date().toISOString();
+    report.earliestLoaded = snapshot.earliestAcquired ? new Date(snapshot.earliestAcquired).toISOString() : null;
+    report.latestLoaded = snapshot.latestAcquired ? new Date(snapshot.latestAcquired).toISOString() : null;
     report.messagesAccumulated = acquisitionBuffer.size;
-    report.coverage = coverageFor(cutoff, snapshot.earliest, snapshot.latest);
+    report.coverage = coverageFor(cutoff, snapshot.earliestAcquired, snapshot.latestAcquired);
     report.complete = report.coverage.startReached;
-
-    if (!report.stopReason) {
-      report.stopReason = report.complete ? "cutoff-reached" : "attempt-limit";
-      if (!report.complete) report.warnings.push("The historical acquisition safety limit was reached before the requested start time.");
-    }
     await persistCheckpoint(report);
     return report;
   }
