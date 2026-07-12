@@ -1,0 +1,50 @@
+{
+  "manifest_version": 3,
+  "name": "Collection Platform \u2014 Discord Reference Adapter",
+  "version": "3.5.0",
+  "version_name": "3.5.0 LTS \u2014 Reliable Historical Acquisition",
+  "description": "LTS Discord reference adapter with accumulated virtualized history, adaptive recovery, navigation retries, batch retry, honest coverage reporting, and no Targeted Collection.",
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://discord.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://discord.com/*"
+      ],
+      "js": [
+        "src/core/namespace.js",
+        "src/core/config.js",
+        "src/core/contracts/adapter-contract.js",
+        "src/core/sdk/conversation-sdk.js",
+        "src/core/diagnostics/logger.js",
+        "src/adapters/discord/selectors.js",
+        "src/core/cache.js",
+        "src/core/profiles/profiles.js",
+        "src/adapters/discord/discovery.js",
+        "src/adapters/discord/navigation.js",
+        "src/adapters/discord/parser.js",
+        "src/core/identity.js",
+        "src/adapters/discord/collector.js",
+        "src/core/acquisition/acquisition.js",
+        "src/core/conversation-model.js",
+        "src/core/renderers/json.js",
+        "src/core/renderers/markdown.js",
+        "src/core/exporter.js",
+        "src/core/orchestration/batch.js",
+        "src/core/diagnostics/validation.js",
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Collection Platform \u2014 Discord Adapter"
+  }
+}
