@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.5.1 LTS
+
+- Replaced the fixed 3,000-cycle acquisition ceiling with a configurable runtime budget.
+- Set the default historical acquisition runtime to three hours per conversation.
+- Added 1, 3, 6, 12, and 24-hour runtime presets plus custom minutes.
+- Added recall presets for 30 days, 90 days, and one, two, or three years.
+- Runtime expiration now occurs only between acquisition cycles, allowing the active cycle to finish cleanly.
+- Removed rate, efficiency, and attempt-count termination. Stalls invoke recovery and collection continues until the requested boundary or runtime budget.
+- Added runtime policy and elapsed-time fields to acquisition reports and checkpoints.
+
 ## 3.5.0 LTS
 
 - Replaced viewport-only historical parsing with an accumulated acquisition buffer.
