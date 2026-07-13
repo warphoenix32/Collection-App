@@ -25,9 +25,9 @@
 </head>
 <body>
   <h1>Collection Platform</h1>
-  <div class="version">Discord Reference Adapter · v3.6.0</div>
+  <div class="version">Knowledge Acquisition Runtime · v4.0.0</div>
 
-  <label for="sourceMode">Acquisition strategy</label>
+  <label for="sourceMode">Operation</label>
   <select id="sourceMode">
     <option value="current">Current conversation</option>
     <option value="navigate">Navigate to cached channel</option>
@@ -36,9 +36,19 @@
   </select>
   <div class="hint" id="sourceHint"></div>
 
+  <label for="intent">Collection intent</label>
+  <select id="intent">
+    <option value="archival" selected>Archival</option>
+    <option value="research">Research</option>
+    <option value="historical">Historical</option>
+    <option value="monitoring">Monitoring</option>
+    <option value="compliance">Compliance</option>
+    <option value="incident-response">Incident Response</option>
+  </select>
+
   <div id="navigationFields" hidden>
     <label for="server">Server</label>
-    <select id="server" disabled><option value="">Reading Discord...</option></select>
+    <select id="server" disabled><option value="">Discovering sources...</option></select>
     <label for="channel">Channel</label>
     <select id="channel" disabled><option value="">Select a server first</option></select>
   </div>
@@ -101,7 +111,7 @@
 
   <button id="exportButton" disabled>Execute Collection</button>
   <button id="topologyButton" class="secondary" disabled>Export Current Server Topology</button>
-  <div class="hint">Observes metadata already visible to this Discord client. It does not navigate or collect messages.</div>
+  <div class="hint">Observes topology metadata already visible to the active platform client. It does not navigate or collect messages.</div>
   <button id="refreshButton" class="secondary">Refresh Navigation Cache</button>
   <button id="healthButton" class="secondary">Runtime Health Report</button>
   <div id="status">Initializing...</div>

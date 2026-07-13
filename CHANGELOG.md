@@ -1,5 +1,16 @@
 # Changelog
 
+## 4.0.0 — Architecture Evolution
+
+- Established independent Collection Platform 4.x and Discord Adapter 1.x versioning.
+- Added confidence-based platform detection and adapter selection.
+- Added adapter registry, self-describing manifests, compatibility metadata, and lifecycle state.
+- Added canonical workspace/source UI translation with adapter-native labels.
+- Added host abstraction, discovery framework, runtime policy, collection intent, executable mission profile, and Knowledge Object models.
+- Routed acquisition, export, batch, topology, identity, provenance, and validation through the selected adapter facade.
+- Preserved the Discord v3.6.0 LTS collector, parser, recovery, checkpoint, and conversation behavior.
+- Added planner and plugin lifecycle architecture without AI reasoning or a second adapter.
+
 ## 3.6.0 — Server Topology Discovery
 
 - Added observational Discord server topology discovery.

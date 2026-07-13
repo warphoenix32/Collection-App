@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "Collection Platform — Discord Reference Adapter",
-  "version": "3.6.0",
-  "version_name": "3.6.0 — Server Topology Discovery",
-  "description": "Collection Platform Discord adapter with server topology discovery, persistent recovery, virtualized history, and deterministic exports.",
+  "name": "Collection Platform",
+  "version": "4.0.0",
+  "version_name": "4.0.0 — Knowledge Acquisition Runtime",
+  "description": "Adapter-driven Knowledge Acquisition Runtime with the Discord production reference adapter.",
   "permissions": [
     "activeTab",
     "tabs",
@@ -21,6 +21,16 @@
       "js": [
         "src/core/namespace.js",
         "src/core/config.js",
+        "src/platform/host/browser-extension-host.js",
+        "src/platform/adapter-registry.js",
+        "src/platform/detection-engine.js",
+        "src/platform/discovery-framework.js",
+        "src/platform/runtime-policies.js",
+        "src/platform/collection-intent.js",
+        "src/platform/mission-profile.js",
+        "src/platform/knowledge-object.js",
+        "src/platform/ui-translator.js",
+        "src/platform/platform-runtime.js",
         "src/core/contracts/adapter-contract.js",
         "src/core/sdk/conversation-sdk.js",
         "src/core/diagnostics/logger.js",
@@ -33,6 +43,8 @@
         "src/adapters/discord/parser.js",
         "src/core/identity.js",
         "src/adapters/discord/collector.js",
+        "src/adapters/discord/adapter-manifest.js",
+        "src/adapters/discord/register.js",
         "src/core/acquisition/acquisition.js",
         "src/core/conversation-model.js",
         "src/core/topology-model.js",
@@ -51,6 +63,6 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Collection Platform — Discord Adapter"
+    "default_title": "Collection Platform"
   }
 }

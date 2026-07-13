@@ -1,5 +1,9 @@
 (() => {
   const DCE = globalThis.DCE;
+  function adapterMetadata() {
+    try { const manifest = DCE.platformRuntime.manifest(); return { platform: manifest.platform, method: manifest.provenance?.acquisitionMethod || "observation" }; }
+    catch (_) { return { platform: "unknown", method: "observation" }; }
+  }
 
   const ROLE_SUFFIXES = [
     "Original Poster", "Council Member", "Battle Tested", "Star Atlas Team",
@@ -20,7 +24,7 @@
   }
 
   function observationKey(author) {
-    if (author?.userId) return `discord:${author.userId}`;
+    if (author?.userId) return `${adapterMetadata().platform}:${author.userId}`;
     const clean = cleanName(author?.displayName);
     if (clean) return `name:${clean.toLowerCase()}`;
     return "unknown";
@@ -34,18 +38,19 @@
   }
 
   function createRecord(author, index) {
+    const adapter = adapterMetadata();
     const platformUserId = author?.userId || null;
     const displayName = cleanName(author?.displayName);
     return {
-      participantId: platformUserId ? `discord-user-${platformUserId}` : `participant-${index}`,
-      platform: "discord",
+      participantId: platformUserId ? `${adapter.platform}-user-${platformUserId}` : `participant-${index}`,
+      platform: adapter.platform,
       platformUserId,
       displayName,
       aliases: [],
       bot: null,
       confidence: confidenceFor(author),
       provenance: {
-        displayName: displayName ? (author?.inferred ? "discord-dom-inferred" : "discord-dom") : null,
+        displayName: displayName ? (author?.inferred ? `${adapter.platform}-${adapter.method}-inferred` : `${adapter.platform}-${adapter.method}`) : null,
         platformUserId: platformUserId ? "avatar-url" : null
       },
       observations: {
@@ -62,6 +67,7 @@
   }
 
   function observe(record, author) {
+    const adapter = adapterMetadata();
     const name = cleanName(author?.displayName);
     if (author?.inferred) record.observations.inferred += 1;
     else record.observations.direct += 1;
@@ -73,7 +79,7 @@
 
     if (!record.displayName && name) {
       record.displayName = name;
-      record.provenance.displayName = author?.inferred ? "discord-dom-inferred" : "discord-dom";
+      record.provenance.displayName = author?.inferred ? `${adapter.platform}-${adapter.method}-inferred` : `${adapter.platform}-${adapter.method}`;
     } else if (name && name !== record.displayName && !record.aliases.includes(name)) {
       record.aliases.push(name);
     }

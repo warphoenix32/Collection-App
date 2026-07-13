@@ -15,6 +15,10 @@ function setup(overrides = {}) {
     logger: { info() {}, warn() {}, error() {}, snapshot: () => [] },
     validation: { runtimeReport: () => ({}) }, ...overrides
   };
+  const manifest = { id: 'test-adapter', name: 'Test Adapter', version: '1.0.0', platform: 'test', ui: { labels: {}, operations: [] } };
+  const adapter = { manifest, navigation: { ...DCE.discord.navigation, describe() {}, navigate() {}, updateCache: async () => {}, startObserver() {} }, collector: { ...DCE.discord.collector, parse() {}, loadHistorical() {} }, topology: DCE.discord.topology || {}, discovery: {} };
+  DCE.platformRuntime = { initialize: async () => adapter, requireAdapter: () => adapter, manifest: () => manifest };
+  DCE.uiTranslator = { describe: () => ({ adapterId: manifest.id, platform: manifest.platform }) };
   load('content.js', { DCE, chrome });
   return { DCE, listener };
 }

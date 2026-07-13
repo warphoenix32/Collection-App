@@ -1,4 +1,23 @@
-# Release Notes — v3.6.0
+# Release Notes — Collection Platform v4.0.0
+
+## Architecture Evolution
+
+Discord Reference Adapter v3.6.0 LTS is frozen at Git tag `discord-reference-adapter-v3.6.0-lts`. Its platform release identity is now Discord Adapter v1.0.0, compatible with Collection Platform v4.x.
+
+Version 4.0 introduces adapter detection, registry and manifests, canonical UI translation, normalized discovery, host abstraction, runtime policy, collection intent, executable mission profiles, Knowledge Object 1.0, and complete acquisition provenance. The stable Discord implementation is wrapped rather than rewritten.
+
+No X, Reddit, AI reasoning, search automation, permission bypass, or historical acquisition redesign is included.
+
+### Validation
+
+- All manifest scripts parse and exist.
+- Platform-core tests prove confidence selection and operation without a Discord global.
+- Discord recovery, deduplication, concurrency, topology, and acquisition isolation regressions pass.
+- Live authenticated Discord acceptance remains governed by `docs/FINAL_VALIDATION.md`.
+
+---
+
+# Previous Release Notes — v3.6.0
 
 ## Server Topology Discovery
 

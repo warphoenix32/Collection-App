@@ -1,5 +1,18 @@
 # Final Validation Handbook
 
+## Platform v4 architecture gate
+
+1. Confirm `main` and tag `discord-reference-adapter-v3.6.0-lts` resolve to the v3.6 production baseline.
+2. Confirm development work is on `development`.
+3. Confirm the registry rejects incomplete and duplicate adapter manifests.
+4. Confirm detection selects the highest positive confidence and rejects unknown contexts.
+5. Confirm reusable core and platform modules contain no Discord references or DOM selectors.
+6. Confirm the Discord manifest reports Platform 4 compatibility, Adapter 1.0.0, capabilities, sources, entities, exports, policies, UI, and lifecycle.
+7. Confirm popup terminology is supplied by the active adapter descriptor.
+8. Confirm legacy profiles normalize to mission profile 2.0 without losing targets or options.
+9. Confirm conversation exports retain Schema 2.x and include additive complete provenance.
+10. Run all Discord historical, checkpoint, topology, batch, identity, JSON, and Markdown cases unchanged.
+
 ## Server Topology Discovery acceptance
 
 1. Open a server with expanded and collapsed categories and export JSON and Markdown topology.

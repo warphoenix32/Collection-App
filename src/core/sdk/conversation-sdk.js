@@ -6,7 +6,7 @@
   }
 
   function stableTargetId(target) {
-    return [target.platform || "discord", target.serverId || "direct", target.channelId || target.conversationId || "unknown"].join(":");
+    return [target.platform || "unknown", target.serverId || "direct", target.channelId || target.conversationId || "unknown"].join(":");
   }
 
   function createJobId(prefix = "job") {

@@ -1,9 +1,14 @@
 (() => {
   const DCE = globalThis.DCE;
+  function key(name, legacyName) {
+    try { return DCE.platformRuntime.manifest().storageKeys[name]; }
+    catch (_) { return DCE.config[legacyName]; }
+  }
 
   async function readNavigationCache() {
-    const stored = await chrome.storage.local.get(DCE.config.navigationCacheKey);
-    return stored[DCE.config.navigationCacheKey] || {
+    const storageKey = key("navigationCache", "navigationCacheKey");
+    const stored = await chrome.storage.local.get(storageKey);
+    return stored[storageKey] || {
       servers: [],
       channelsByServer: {},
       current: null,
@@ -12,22 +17,23 @@
   }
 
   async function writeNavigationCache(cache) {
-    await chrome.storage.local.set({ [DCE.config.navigationCacheKey]: cache });
+    await chrome.storage.local.set({ [key("navigationCache", "navigationCacheKey")]: cache });
     return cache;
   }
 
   async function readAcquisitionCheckpoint() {
-    const stored = await chrome.storage.local.get(DCE.config.acquisitionCheckpointKey);
-    return stored[DCE.config.acquisitionCheckpointKey] || null;
+    const storageKey = key("acquisitionCheckpoint", "acquisitionCheckpointKey");
+    const stored = await chrome.storage.local.get(storageKey);
+    return stored[storageKey] || null;
   }
 
   async function writeAcquisitionCheckpoint(checkpoint) {
-    await chrome.storage.local.set({ [DCE.config.acquisitionCheckpointKey]: checkpoint });
+    await chrome.storage.local.set({ [key("acquisitionCheckpoint", "acquisitionCheckpointKey")]: checkpoint });
     return checkpoint;
   }
 
   async function clearAcquisitionCheckpoint() {
-    await chrome.storage.local.remove(DCE.config.acquisitionCheckpointKey);
+    await chrome.storage.local.remove(key("acquisitionCheckpoint", "acquisitionCheckpointKey"));
   }
 
   DCE.cache = { readNavigationCache, writeNavigationCache, readAcquisitionCheckpoint, writeAcquisitionCheckpoint, clearAcquisitionCheckpoint };

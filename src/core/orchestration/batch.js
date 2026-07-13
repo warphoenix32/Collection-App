@@ -2,7 +2,7 @@
   const DCE = globalThis.DCE;
   const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
   async function execute(request, executeSingle) {
-    const jobId=request.jobId||DCE.sdk.createJobId('batch'), startedAt=Date.now(), originalUrl=location.href, results=[];
+    const adapter=DCE.platformRuntime.requireAdapter(), jobId=request.jobId||DCE.sdk.createJobId('batch'), startedAt=Date.now(), originalUrl=location.href, results=[];
     DCE.logger.info('batch.started',{jobId,targets:request.targets.length});
     for(let index=0; index<request.targets.length; index+=1){
       const target=request.targets[index], itemStartedAt=Date.now(); let result=null;
@@ -16,8 +16,8 @@
       const summary=DCE.sdk.summarizeResult(target,result,itemStartedAt,Date.now()); results.push(summary);
       DCE.logger[result?.success?'info':'warn']('batch.item.finished',{jobId,index,summary});
     }
-    let restored=true; try { if(location.href!==originalUrl) await DCE.discord.navigation.navigateWithinDiscord(originalUrl); } catch(error){restored=false;DCE.logger.error('batch.restore.failed',{jobId,error:error.message});}
-    const finishedAt=Date.now(); const manifest={schemaName:'collection-platform-batch-manifest',schemaVersion:'1.1.0',jobId,platform:'discord',startedAt:new Date(startedAt).toISOString(),finishedAt:new Date(finishedAt).toISOString(),durationMs:finishedAt-startedAt,originalUrl,restored,totals:{targets:results.length,success:results.filter(i=>i.status==='success').length,warning:results.filter(i=>i.status==='warning').length,failed:results.filter(i=>i.status==='failed').length,messages:results.reduce((s,i)=>s+i.messageCount,0)},results,diagnostics:DCE.logger.snapshot()};
+    let restored=true; try { if(location.href!==originalUrl) await adapter.navigation.navigate(originalUrl); } catch(error){restored=false;DCE.logger.error('batch.restore.failed',{jobId,error:error.message});}
+    const finishedAt=Date.now(), intent=DCE.collectionIntent.normalize(request.options?.intent||'archival'), runtimePolicy=DCE.runtimePolicies.resolve(request.options?.runtimePolicy||{historicalRuntimeMs:request.options?.maxRuntimeMs}); const manifest={schemaName:'collection-platform-batch-manifest',schemaVersion:'1.1.0',jobId,platform:adapter.manifest.platform,adapterId:adapter.manifest.id,adapterVersion:adapter.manifest.version,platformVersion:DCE.config.platformVersion,startedAt:new Date(startedAt).toISOString(),finishedAt:new Date(finishedAt).toISOString(),durationMs:finishedAt-startedAt,originalUrl,restored,totals:{targets:results.length,success:results.filter(i=>i.status==='success').length,warning:results.filter(i=>i.status==='warning').length,failed:results.filter(i=>i.status==='failed').length,messages:results.reduce((s,i)=>s+i.messageCount,0)},results,provenance:{platform:adapter.manifest.platform,adapterVersion:adapter.manifest.version,platformVersion:DCE.config.platformVersion,collectorVersion:DCE.config.extensionVersion,collectionIntent:intent.id,runtimePolicy,collectionTime:{startedAt:new Date(startedAt).toISOString(),finishedAt:new Date(finishedAt).toISOString()},confidence:results.some(i=>i.status==='failed')?'medium':'high',acquisitionMethod:adapter.manifest.provenance?.acquisitionMethod||'adapter',originalSource:originalUrl},diagnostics:DCE.logger.snapshot()};
     DCE.exporter.downloadPayload(JSON.stringify(manifest,null,2),`collection-platform-batch-${jobId}.json`,'application/json'); DCE.logger.info('batch.finished',{jobId,totals:manifest.totals,restored}); return {success:manifest.totals.failed<manifest.totals.targets,manifest};
   }
   DCE.batch={execute};

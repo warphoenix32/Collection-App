@@ -1,8 +1,17 @@
-# Collection Platform — Discord Reference Adapter v3.6.0
+# Collection Platform v4.0.0
 
 ## BLUF
 
-This is the final feature release of the Discord adapter. It preserves current-conversation, navigation, batch, profiles, normalized exports, and identity handling while replacing fragile historical loading with a fault-tolerant acquisition process.
+Collection Platform is an adapter-driven Knowledge Acquisition Runtime. Discord Reference Adapter v1.0.0 is the first production adapter and preserves the complete Discord v3.6.0 LTS behavior baseline.
+
+Platform detection selects the highest-confidence installed adapter. The adapter registry exposes capabilities, sources, entities, exports, runtime policies, topology support, and native UI terminology. Conversation Schema 2.x remains operational while Knowledge Object 1.0 is additive.
+
+## Branch policy
+
+- `main`: immutable production baseline, tagged `discord-reference-adapter-v3.6.0-lts`.
+- `development`: Collection Platform v4 evolution and integration.
+
+Experimental work does not occur on `main`.
 
 ## Final capability set
 
