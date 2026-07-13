@@ -4,6 +4,26 @@
   const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
   let acquisitionBuffer = new Map();
 
+  function checkpointMatches(checkpoint, startIso) {
+    if (!checkpoint || checkpoint.version !== 2 || checkpoint.complete) return false;
+    if (checkpoint.cutoff !== startIso) return false;
+    try { return DCE.discord.navigation.canonicalConversationUrl(checkpoint.url) === DCE.discord.navigation.canonicalConversationUrl(location.href); }
+    catch (_) { return checkpoint.url === location.href; }
+  }
+
+  async function restoreCheckpoint(startIso) {
+    try {
+      const checkpoint = await DCE.cache.readAcquisitionCheckpoint();
+      if (!checkpointMatches(checkpoint, startIso) || !Array.isArray(checkpoint.messages)) return null;
+      acquisitionBuffer = new Map(checkpoint.messages.map(message => [rawMessageKey(message), message]));
+      DCE.logger.info("acquisition.checkpoint.restored", { savedAt: checkpoint.savedAt, bufferedMessages: acquisitionBuffer.size, cycles: checkpoint.cycles });
+      return checkpoint;
+    } catch (error) {
+      DCE.logger.warn("acquisition.checkpoint.restore.failed", { error: error.message });
+      return null;
+    }
+  }
+
   function getMessageScroller() {
     const message = document.querySelector(S.message);
     if (!message) return null;
@@ -43,8 +63,8 @@
     const timestamps = Array.from(acquisitionBuffer.values())
       .map(message => Date.parse(message.timestamp)).filter(Number.isFinite);
     return {
-      earliest: timestamps.length ? Math.min(...timestamps) : null,
-      latest: timestamps.length ? Math.max(...timestamps) : null
+      earliest: timestamps.length ? timestamps.reduce((value, timestamp) => Math.min(value, timestamp), Infinity) : null,
+      latest: timestamps.length ? timestamps.reduce((value, timestamp) => Math.max(value, timestamp), -Infinity) : null
     };
   }
 
@@ -53,8 +73,8 @@
       .map(node => Date.parse(node.getAttribute("datetime"))).filter(Number.isFinite);
     const bounds = bufferedTimeBounds();
     return {
-      earliest: timestamps.length ? Math.min(...timestamps) : null,
-      latest: timestamps.length ? Math.max(...timestamps) : null,
+      earliest: timestamps.length ? timestamps.reduce((value, timestamp) => Math.min(value, timestamp), Infinity) : null,
+      latest: timestamps.length ? timestamps.reduce((value, timestamp) => Math.max(value, timestamp), -Infinity) : null,
       earliestAcquired: bounds.earliest,
       latestAcquired: bounds.latest,
       renderedCount: document.querySelectorAll(S.message).length,
@@ -64,8 +84,8 @@
   }
 
   function snapshotAdvanced(before, after) {
-    return after.earliest !== null && (
-      before.earliest === null || after.earliest < before.earliest ||
+    return Number.isFinite(after.earliest) && (
+      !Number.isFinite(before.earliest) || after.earliest < before.earliest ||
       after.bufferedCount > before.bufferedCount || after.scrollHeight !== before.scrollHeight
     );
   }
@@ -124,8 +144,8 @@
 
   async function persistCheckpoint(report) {
     try {
-      await chrome.storage.local.set({
-        [DCE.config.acquisitionCheckpointKey]: {
+      await DCE.cache.writeAcquisitionCheckpoint({
+          version: 2,
           savedAt: new Date().toISOString(),
           url: location.href,
           cutoff: report.coverage?.requestedStart || null,
@@ -134,8 +154,10 @@
           elapsedMs: report.elapsedMs,
           maxRuntimeMs: report.maxRuntimeMs,
           cycles: report.cycles,
-          recoveries: report.recoveries
-        }
+          recoveries: report.recoveries,
+          complete: report.complete,
+          stopReason: report.stopReason,
+          messages: Array.from(acquisitionBuffer.values())
       });
     } catch (error) {
       DCE.logger.warn("acquisition.checkpoint.failed", { error: error.message });
@@ -144,13 +166,15 @@
 
   async function loadOlderMessagesUntil(startIso, policy = {}) {
     acquisitionBuffer = new Map();
+    const resumed = await restoreCheckpoint(startIso);
     const maxRuntimeMs = resolveMaxRuntimeMs(policy.maxRuntimeMs);
     const startedAt = Date.now();
     const report = {
       attempted: true, complete: false, cycles: 0, recoveries: 0,
       stopReason: null, earliestLoaded: null, latestLoaded: null,
       messagesAccumulated: 0, warnings: [], coverage: null,
-      startedAt: new Date(startedAt).toISOString(), elapsedMs: 0, maxRuntimeMs
+      startedAt: new Date(startedAt).toISOString(), elapsedMs: 0, maxRuntimeMs,
+      resumed: Boolean(resumed), resumedFrom: resumed?.savedAt || null
     };
     const cutoff = Date.parse(startIso);
     const scroller = getMessageScroller();
@@ -167,6 +191,10 @@
 
     accumulateRenderedMessages();
     let snapshot = getRenderedSnapshot();
+    if (resumed) {
+      report.cycles = Number(resumed.cycles) || 0;
+      report.recoveries = Number(resumed.recoveries) || 0;
+    }
     let consecutiveStalls = 0;
 
     while (true) {

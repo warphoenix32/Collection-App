@@ -1,5 +1,6 @@
 (() => {
   const DCE = globalThis.DCE;
+  let activeOperation = null;
   console.log(`Collection Platform ${DCE.config.extensionVersion} / Discord Adapter loaded.`);
 
   async function executeExport(request, execution = {}) {
@@ -9,7 +10,6 @@
     try {
       context = await DCE.acquisition.acquire(request.strategy, request);
       const result = await DCE.exporter.exportConversation(request.options, context.source);
-      if (!result.success) return { ...result, restored };
       if (restoreAfter) restored = await DCE.acquisition.restore(context);
       await DCE.discord.navigation.updateNavigationCache();
       return { ...result, restored };
@@ -19,6 +19,17 @@
         try { restored = await DCE.acquisition.restore(context); } catch (_) { restored = false; }
       }
       return { success: false, error: error.message, restored };
+    }
+  }
+
+  async function runExclusive(kind, operation) {
+    if (activeOperation) return { success: false, error: `A ${activeOperation.kind} operation is already running.`, busy: true };
+    activeOperation = { kind, startedAt: new Date().toISOString() };
+    DCE.logger.info("operation.started", activeOperation);
+    try { return await operation(); }
+    finally {
+      DCE.logger.info("operation.finished", { ...activeOperation, finishedAt: new Date().toISOString() });
+      activeOperation = null;
     }
   }
 
@@ -37,11 +48,11 @@
       return true;
     }
     if (request.action === "executeExport") {
-      executeExport(request).then(sendResponse);
+      runExclusive("collection", () => executeExport(request)).then(sendResponse, error => sendResponse({ success: false, error: error.message }));
       return true;
     }
     if (request.action === "executeBatch") {
-      DCE.batch.execute(request, executeExport).then(sendResponse);
+      runExclusive("batch", () => DCE.batch.execute(request, executeExport)).then(sendResponse, error => sendResponse({ success: false, error: error.message }));
       return true;
     }
     if (request.action === "saveProfile") {
@@ -53,7 +64,7 @@
       return true;
     }
     if (request.action === "getRuntimeReport") {
-      sendResponse({ success: true, report: DCE.validation.runtimeReport(), logs: DCE.logger.snapshot() });
+      sendResponse({ success: true, report: DCE.validation.runtimeReport(), logs: DCE.logger.snapshot(), activeOperation });
       return;
     }
   });

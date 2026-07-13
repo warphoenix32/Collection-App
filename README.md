@@ -1,4 +1,4 @@
-# Collection Platform — Discord Reference Adapter v3.5.1 LTS
+# Collection Platform — Discord Reference Adapter v3.5.2 LTS
 
 ## BLUF
 
@@ -49,3 +49,18 @@ The adapter performs recovery when Discord stalls and continues until it reaches
 Discord Adapter: **Reference Adapter v1 / LTS**
 
 Future work should be maintenance-only unless Discord changes its rendered interface.
+
+## Engineering checks
+
+Node.js 18 or newer is required only for development checks; the extension itself has no package dependencies.
+
+```text
+npm run check
+```
+
+On Windows systems that block PowerShell scripts, run the equivalent commands directly:
+
+```text
+node tests/static-check.js
+node --test tests/*.test.js
+```

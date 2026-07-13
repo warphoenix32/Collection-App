@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.5.2 LTS — Stability and Recovery
+
+- Persist complete in-progress acquisition buffers so interrupted historical collection can resume.
+- Persist bounded structured diagnostics in extension-local storage.
+- Serialize operations to protect shared acquisition state.
+- Restore the original Discord view even when export finds no matching messages.
+- Correct initial in-app navigation and make timestamp bounds safe for large archives.
+- Add dependency-free static, regression, recovery, concurrency, and stress tests.
+
 ## 3.5.1 LTS
 
 - Replaced the fixed 3,000-cycle acquisition ceiling with a configurable runtime budget.

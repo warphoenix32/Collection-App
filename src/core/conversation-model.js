@@ -89,8 +89,8 @@
       collection: {
         requestedRange: { start: options.startIso || null, end: options.endIso || null },
         actualRange: {
-          start: timestamps.length ? new Date(Math.min(...timestamps)).toISOString() : null,
-          end: timestamps.length ? new Date(Math.max(...timestamps)).toISOString() : null
+          start: timestamps.length ? new Date(timestamps.reduce((value, timestamp) => Math.min(value, timestamp), Infinity)).toISOString() : null,
+          end: timestamps.length ? new Date(timestamps.reduce((value, timestamp) => Math.max(value, timestamp), -Infinity)).toISOString() : null
         },
         complete: collectionReport?.complete ?? true,
         durationMs: finishedAt - startedAt,

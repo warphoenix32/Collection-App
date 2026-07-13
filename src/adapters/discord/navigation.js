@@ -63,7 +63,7 @@
   }
 
   async function attemptNavigation(url, attempt) {
-    if (attempt === 1) {
+    if (attempt === 0) {
       const anchor = Array.from(document.querySelectorAll('a[href]')).find(a => new URL(a.href, location.origin).href === url || a.getAttribute('href') === new URL(url).pathname);
       if (anchor) anchor.click(); else { history.pushState({}, '', url); window.dispatchEvent(new PopStateEvent('popstate')); }
     } else {

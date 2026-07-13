@@ -1,13 +1,14 @@
 {
   "manifest_version": 3,
   "name": "Collection Platform — Discord Reference Adapter",
-  "version": "3.5.1",
-  "version_name": "3.5.1 LTS — Configurable Historical Runtime",
-  "description": "LTS Discord reference adapter with configurable historical runtime, three-hour default, accumulated virtualized history, recovery, batch retry, and honest coverage reporting.",
+  "version": "3.5.2",
+  "version_name": "3.5.2 LTS — Stability and Recovery",
+  "description": "LTS Discord reference adapter with persistent recovery, configurable historical runtime, accumulated virtualized history, batch retry, and honest coverage reporting.",
   "permissions": [
     "activeTab",
     "tabs",
-    "storage"
+    "storage",
+    "unlimitedStorage"
   ],
   "host_permissions": [
     "https://discord.com/*"
