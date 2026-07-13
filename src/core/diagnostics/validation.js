@@ -5,6 +5,7 @@
     const adapter = {
       platform: "discord",
       ...DCE.discord.discovery,
+      ...DCE.discord.topology,
       ...DCE.discord.navigation,
       ...DCE.discord.collector
     };
@@ -21,7 +22,8 @@
         currentConversationStrategy: true,
         navigationStrategy: true,
         batchStrategy: Boolean(DCE.batch),
-        profiles: Boolean(DCE.profiles)
+        profiles: Boolean(DCE.profiles),
+        topologyExport: Boolean(DCE.topologyModel && DCE.topologyExporter)
       }
     };
   }

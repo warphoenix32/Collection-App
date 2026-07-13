@@ -1,5 +1,16 @@
 # Final Validation Handbook
 
+## Server Topology Discovery acceptance
+
+1. Open a server with expanded and collapsed categories and export JSON and Markdown topology.
+2. Confirm visible text and announcement channels are represented.
+3. Confirm categories retain exposed IDs, names, order, and collapsed state.
+4. Confirm forums and currently exposed threads appear in their dedicated arrays.
+5. Confirm a rendered channel metadata node without a navigable link is `known-unreadable`, with `canNavigate`, `canCollect`, and `collectible` all false.
+6. Confirm topology export causes no navigation, message loading, second authentication, background tab, or network/API automation.
+7. Confirm objects for which Discord exposes no metadata are absent rather than synthesized.
+8. Run current conversation, navigation, batch, checkpoint recovery, JSON, and Markdown regression cases unchanged.
+
 ## Static release gate
 
 - Manifest parses as JSON.

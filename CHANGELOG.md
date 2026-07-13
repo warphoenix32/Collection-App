@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.6.0 — Server Topology Discovery
+
+- Added observational Discord server topology discovery.
+- Added independent topology model and JSON/Markdown renderers.
+- Added current-server topology export in the popup.
+- Preserved categories, forums, threads, and exposed unreadable channel metadata.
+- Added topology capability reporting and eight-test regression gate.
+- Kept topology discovery isolated from navigation, acquisition, Conversation Schema 2.x, and conversation exports.
+
 ## 3.5.2 LTS — Stability and Recovery
 
 - Persist complete in-progress acquisition buffers so interrupted historical collection can resume.

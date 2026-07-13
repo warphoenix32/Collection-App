@@ -1,4 +1,22 @@
-# Release Notes — v3.5.1 LTS
+# Release Notes — v3.6.0
+
+## Server Topology Discovery
+
+Version 3.6.0 adds an independent server inventory path. From an open Discord server, operators can export the topology metadata already exposed to the authenticated client as JSON or Markdown.
+
+The export includes server identity, categories, channels, forums, and threads when Discord renders their metadata. Channels are classified as `collectible` or `known-unreadable`, with explicit navigation and collection booleans. Unknown objects are not synthesized.
+
+The observer performs no message acquisition, navigation, API calls, background-tab creation, authentication, request modification, or permission bypass. Conversation Schema 2.0.0 and historical acquisition are unchanged.
+
+### Validation
+
+- 27 manifest JavaScript files pass syntax and existence validation.
+- Eight automated tests pass, including topology structure, unreadable-channel safety, non-invention, acquisition isolation, checkpoint recovery, concurrency, and 30,000-element stress coverage.
+- Live Discord DOM compatibility still requires the acceptance procedure in the Validation Handbook.
+
+---
+
+# Previous Release Notes — v3.5.1 LTS
 
 ## Configurable Long-Run Historical Acquisition
 

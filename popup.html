@@ -25,7 +25,7 @@
 </head>
 <body>
   <h1>Collection Platform</h1>
-  <div class="version">Discord Reference Adapter · v3.5.1 LTS</div>
+  <div class="version">Discord Reference Adapter · v3.6.0</div>
 
   <label for="sourceMode">Acquisition strategy</label>
   <select id="sourceMode">
@@ -100,6 +100,8 @@
   <label class="check"><input id="loadOlder" type="checkbox" checked>Load older messages when a time range is selected</label>
 
   <button id="exportButton" disabled>Execute Collection</button>
+  <button id="topologyButton" class="secondary" disabled>Export Current Server Topology</button>
+  <div class="hint">Observes metadata already visible to this Discord client. It does not navigate or collect messages.</div>
   <button id="refreshButton" class="secondary">Refresh Navigation Cache</button>
   <button id="healthButton" class="secondary">Runtime Health Report</button>
   <div id="status">Initializing...</div>

@@ -45,3 +45,15 @@ test('overlapping collection requests are rejected without touching shared state
   release({ success: true });
   assert.equal((await first).success, true);
 });
+
+test('topology export path does not invoke message acquisition', async () => {
+  let acquisitions = 0;
+  const topologyExporter = { exportServerTopology: format => ({ success: true, format, statistics: { channels: 3 } }) };
+  const { listener, DCE } = setup({ topologyExporter });
+  DCE.discord.topology = {};
+  DCE.acquisition.acquire = async () => { acquisitions += 1; throw new Error('must not run'); };
+  const result = await send(listener, { action: 'exportServerTopology', format: 'json' });
+  assert.equal(result.success, true);
+  assert.equal(result.statistics.channels, 3);
+  assert.equal(acquisitions, 0);
+});

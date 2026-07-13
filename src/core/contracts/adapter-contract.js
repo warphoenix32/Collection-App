@@ -11,6 +11,7 @@
     return Object.freeze({
       platform: adapter?.platform || "unknown",
       discovery: Boolean(adapter?.scanServers && adapter?.scanChannels),
+      topologyDiscovery: Boolean(adapter?.discoverServerTopology),
       navigation: Boolean(adapter?.navigateWithinDiscord),
       currentConversation: Boolean(adapter?.describeCurrentConversation),
       historicalLoading: Boolean(adapter?.loadOlderMessagesUntil),

@@ -1,4 +1,4 @@
-# Collection Platform — Discord Reference Adapter v3.5.2 LTS
+# Collection Platform — Discord Reference Adapter v3.6.0
 
 ## BLUF
 
@@ -16,6 +16,13 @@ This is the final feature release of the Discord adapter. It preserves current-c
 - Relative recall presets from 24 hours through three years
 - Exact custom start and end timestamps
 - Configurable historical runtime from five minutes through 24 hours, with a three-hour default
+- Server Topology Discovery with independent JSON and Markdown inventory exports
+
+## Server Topology Discovery
+
+Open a server in the authenticated Discord tab and choose **Export Current Server Topology**. The observer inventories only metadata already rendered for that client: server, categories, channels, forums, and threads. It classifies message-bearing navigable objects as `collectible` and exposed but non-collectible metadata as `known-unreadable`.
+
+Topology export does not navigate, load messages, call Discord APIs, open tabs, or alter the Conversation Schema. Discord may omit metadata for collapsed, archived, or inaccessible objects; absent objects are never invented.
 
 ## Retired capability
 

@@ -1,6 +1,6 @@
 {
   "name": "collection-platform-discord-adapter",
-  "version": "3.5.2",
+  "version": "3.6.0",
   "private": true,
   "scripts": {
     "test": "node --test tests/*.test.js",

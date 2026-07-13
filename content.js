@@ -55,6 +55,11 @@
       runExclusive("batch", () => DCE.batch.execute(request, executeExport)).then(sendResponse, error => sendResponse({ success: false, error: error.message }));
       return true;
     }
+    if (request.action === "exportServerTopology") {
+      runExclusive("topology discovery", () => DCE.topologyExporter.exportServerTopology(request.format))
+        .then(sendResponse, error => sendResponse({ success: false, error: error.message }));
+      return true;
+    }
     if (request.action === "saveProfile") {
       DCE.profiles.save(request.profile).then(profile => sendResponse({ success: true, profile })).catch(error => sendResponse({ success: false, error: error.message }));
       return true;
@@ -69,7 +74,7 @@
     }
   });
 
-  const adapter = { platform: "discord", ...DCE.discord.discovery, ...DCE.discord.navigation, ...DCE.discord.collector };
+  const adapter = { platform: "discord", ...DCE.discord.discovery, ...DCE.discord.topology, ...DCE.discord.navigation, ...DCE.discord.collector };
   const contract = DCE.contracts.adapter.validate(adapter);
   if (!contract.valid) DCE.logger.error("adapter.contract.invalid", contract);
   else DCE.logger.info("adapter.contract.valid", DCE.contracts.adapter.capabilities(adapter));
