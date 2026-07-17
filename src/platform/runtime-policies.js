@@ -7,9 +7,18 @@
     recovery: "adaptive",
     exportBehavior: "download"
   });
-  function resolve(policy = {}) {
-    return Object.freeze({ ...defaults, ...policy,
-      historicalRuntimeMs: Number.isFinite(Number(policy.historicalRuntimeMs)) ? Number(policy.historicalRuntimeMs) : defaults.historicalRuntimeMs });
+  function historicalRuntimeMs(value) {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric) || numeric <= 0) return defaults.historicalRuntimeMs;
+    return Math.min(
+      Math.max(Math.round(numeric), DCE.config.acquisitionMinimumMaxRuntimeMs),
+      DCE.config.acquisitionMaximumMaxRuntimeMs
+    );
   }
-  DCE.runtimePolicies = { defaults, resolve };
+  function resolve(policy = {}) {
+    policy = policy && typeof policy === "object" ? policy : {};
+    return Object.freeze({ ...defaults, ...policy,
+      historicalRuntimeMs: historicalRuntimeMs(policy.historicalRuntimeMs) });
+  }
+  DCE.runtimePolicies = { defaults, resolve, historicalRuntimeMs };
 })();

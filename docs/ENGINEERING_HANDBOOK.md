@@ -17,7 +17,13 @@ Requirements precede implementation. Discovery precedes architecture. Architectu
 - Every acquisition declares intent and produces provenance.
 - Conversation Schema changes require an independent schema mission.
 - New adapters must pass manifest, detection, capability, isolation, and regression gates.
+- Long-running operations must expose cooperative cancellation and preserve valid partial evidence.
+- Adapter ownership requires the platform's minimum detection confidence; weak matches fail closed.
 
 ## Adapter #2 readiness review
 
 An adapter supplies manifest/register modules, source-native implementation, detection confidence, canonical runtime methods, normalized discovery, and UI labels. It does not modify acquisition, batch, exporter, profiles, platform detection, registry, popup operation logic, or Knowledge Object contracts.
+
+## Local validation
+
+Run `npm.cmd run check` on Windows or `npm run check` elsewhere. The gate validates JavaScript syntax, manifest dependency existence, reusable-module isolation, popup element wiring, adapter detection, policy normalization, mission execution, cancellation, and canonical object behavior.

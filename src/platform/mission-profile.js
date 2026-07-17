@@ -13,5 +13,19 @@
       schedule: profile.schedule || null
     };
   }
-  DCE.missionProfile = { normalize };
+  function executionOptions(profile = {}, fallback = {}) {
+    const stored = profile.options && typeof profile.options === "object" ? profile.options : {};
+    const intent = profile.intent?.id || profile.intent || stored.intent || fallback.intent || "archival";
+    const runtimePolicy = DCE.runtimePolicies.resolve(profile.runtimePolicy || stored.runtimePolicy || fallback.runtimePolicy || {
+      historicalRuntimeMs: stored.maxRuntimeMs || fallback.maxRuntimeMs
+    });
+    return {
+      ...fallback,
+      ...stored,
+      intent: DCE.collectionIntent.normalize(intent).id,
+      runtimePolicy,
+      maxRuntimeMs: runtimePolicy.historicalRuntimeMs
+    };
+  }
+  DCE.missionProfile = { normalize, executionOptions };
 })();

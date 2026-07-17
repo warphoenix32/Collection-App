@@ -7,11 +7,13 @@
 3. Confirm the registry rejects incomplete and duplicate adapter manifests.
 4. Confirm detection selects the highest positive confidence and rejects unknown contexts.
 5. Confirm reusable core and platform modules contain no Discord references or DOM selectors.
-6. Confirm the Discord manifest reports Platform 4 compatibility, Adapter 1.0.0, capabilities, sources, entities, exports, policies, UI, and lifecycle.
+6. Confirm the Discord manifest reports Platform 4 compatibility, Adapter 1.0.1, capabilities, sources, entities, exports, policies, UI, and lifecycle.
 7. Confirm popup terminology is supplied by the active adapter descriptor.
 8. Confirm legacy profiles normalize to mission profile 2.0 without losing targets or options.
 9. Confirm conversation exports retain Schema 2.x and include additive complete provenance.
 10. Run all Discord historical, checkpoint, topology, batch, identity, JSON, and Markdown cases unchanged.
+11. Start a historical collection, select **Stop Active Collection**, and confirm a partial export is downloaded with `stopReason: operator-cancelled`.
+12. Stop a batch during its first target; confirm remaining targets are `cancelled` in the manifest and the original Discord view is restored.
 
 ## Server Topology Discovery acceptance
 

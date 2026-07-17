@@ -26,6 +26,12 @@ Core UI state uses workspaces, sources, operations, and targets. Adapter manifes
 
 The browser-extension host exposes context, storage, and time. Detection and registry code depend on the host contract rather than Chrome directly. Stable legacy engines still use browser globals for backward compatibility; new platform modules do not, except the host implementation. Future Playwright, official API, and desktop hosts implement the same boundary.
 
+## Operation control
+
+The platform operation controller serializes collection, batch, and topology work and exposes cooperative cancellation state. Adapters observe cancellation at safe boundaries; they do not terminate halfway through a parse or persistence step. The Discord historical collector preserves its accumulated buffer as a partial export, while batch orchestration marks unstarted targets as cancelled and restores the original source view.
+
+Cancellation is a platform control-plane concern. Source-specific adapters decide where their safe interruption boundaries occur.
+
 ## Version boundaries
 
 - Collection Platform: `4.x`.

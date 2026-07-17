@@ -1,13 +1,14 @@
 (() => {
   const DCE = globalThis.DCE;
   DCE.config = Object.freeze({
-    extensionVersion: "4.0.0",
-    platformVersion: "4.0.0",
-    adapterVersion: "1.0.0",
+    extensionVersion: "4.0.1",
+    platformVersion: "4.0.1",
+    adapterVersion: "1.0.1",
     schemaVersion: "2.0.0",
     identityEngineVersion: "1.0.0",
     topologySchemaVersion: "1.0.0",
-    adapterContractVersion: "1.0.0",
+    adapterContractVersion: "2.0.0",
+    adapterDetectionMinimumConfidence: 0.5,
     profileStorageKey: "collectionPlatformProfiles",
     diagnosticLogKey: "collectionPlatformDiagnosticLog",
     navigationRefreshDebounceMs: 250,

@@ -10,7 +10,11 @@
     }
     candidates.sort((a, b) => b.confidence - a.confidence || a.definition.manifest.id.localeCompare(b.definition.manifest.id));
     const winner = candidates[0];
-    if (!winner || winner.confidence <= 0) throw new Error("No installed adapter recognizes the active source.");
+    const minimumConfidence = Number(DCE.config?.adapterDetectionMinimumConfidence) || 0.5;
+    if (!winner || winner.confidence < minimumConfidence) {
+      const best = winner ? ` Best candidate: ${winner.definition.manifest.id} (${Math.round(winner.confidence * 100)}%).` : "";
+      throw new Error(`No installed adapter recognizes the active source with sufficient confidence.${best}`);
+    }
     return { winner: winner.definition, confidence: winner.confidence, candidates: candidates.map(item => ({ id: item.definition.manifest.id, confidence: item.confidence })) };
   }
   DCE.detectionEngine = { detect };

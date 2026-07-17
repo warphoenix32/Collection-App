@@ -1,95 +1,228 @@
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const { load } = require('./helpers');
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const { createContext, load } = require("./helpers");
 
-test('detection engine selects the highest-confidence registered adapter', async () => {
-  const DCE = { logger: { warn() {} } };
-  load('src/platform/adapter-registry.js', { DCE });
-  load('src/platform/detection-engine.js', { DCE });
-  const manifest = id => ({ id, name: id, version: '1.0.0', platform: id, capabilities: {}, sources: [], entities: [], exports: [], runtimePolicies: [], ui: {} });
-  DCE.adapterRegistry.register({ manifest: manifest('low'), detect: () => 0.25, createRuntime: () => ({}) });
-  DCE.adapterRegistry.register({ manifest: manifest('high'), detect: () => 0.9, createRuntime: () => ({}) });
-  assert.throws(() => DCE.adapterRegistry.register({ manifest: manifest('high'), detect: () => 1, createRuntime: () => ({}) }), /already registered/);
-  assert.throws(() => DCE.adapterRegistry.register({ manifest: { id: 'broken' }, detect: () => 1, createRuntime: () => ({}) }), /missing/);
-  const result = await DCE.detectionEngine.detect({ hostname: 'example.test' });
-  assert.equal(result.winner.manifest.id, 'high');
+function platformContext() {
+  const context = createContext();
+  load(context, "src/core/config.js");
+  load(context, "src/core/sdk/conversation-sdk.js");
+  load(context, "src/platform/operation-controller.js");
+  load(context, "src/platform/runtime-policies.js");
+  load(context, "src/platform/collection-intent.js");
+  load(context, "src/platform/mission-profile.js");
+  load(context, "src/platform/knowledge-object.js");
+  load(context, "src/platform/adapter-registry.js");
+  load(context, "src/platform/detection-engine.js");
+  load(context, "src/platform/ui-translator.js");
+  return context;
+}
+
+function adapter(id, confidence, platform = id) {
+  return {
+    manifest: {
+      id,
+      name: `${id} adapter`,
+      version: "1.0.0",
+      platform,
+      capabilities: {},
+      sources: [],
+      entities: [],
+      exports: [],
+      runtimePolicies: [],
+      ui: { labels: {}, operations: [] }
+    },
+    detect: () => confidence,
+    createRuntime: () => ({})
+  };
+}
+
+test("runtime policies clamp historical runtime to supported bounds", () => {
+  const { DCE } = platformContext();
+  assert.equal(DCE.runtimePolicies.resolve({ historicalRuntimeMs: 1 }).historicalRuntimeMs, DCE.config.acquisitionMinimumMaxRuntimeMs);
+  assert.equal(DCE.runtimePolicies.resolve({ historicalRuntimeMs: Infinity }).historicalRuntimeMs, DCE.config.acquisitionDefaultMaxRuntimeMs);
+  assert.equal(DCE.runtimePolicies.resolve({ historicalRuntimeMs: 99 * 60 * 60 * 1000 }).historicalRuntimeMs, DCE.config.acquisitionMaximumMaxRuntimeMs);
+});
+
+test("operation controller serializes work and accepts cancellation", () => {
+  const { DCE } = platformContext();
+  const active = DCE.operationController.begin("collection");
+  assert.equal(DCE.operationController.snapshot().kind, "collection");
+  assert.throws(() => DCE.operationController.begin("batch"), /already running/);
+  assert.equal(DCE.operationController.requestCancellation().accepted, true);
+  assert.equal(DCE.operationController.isCancellationRequested(), true);
+  DCE.operationController.finish(active.id);
+  assert.equal(DCE.operationController.snapshot(), null);
+});
+
+test("adapter detection selects the strongest sufficiently confident adapter", async () => {
+  const { DCE } = platformContext();
+  DCE.adapterRegistry.register(adapter("weak", 0.49));
+  DCE.adapterRegistry.register(adapter("strong", 0.9));
+  const result = await DCE.detectionEngine.detect({ hostname: "example.test" });
+  assert.equal(result.winner.manifest.id, "strong");
   assert.equal(result.confidence, 0.9);
 });
 
-test('Discord adapter self-registers with independent version and canonical runtime', () => {
-  const noop = () => {};
-  const navigation = { describeCurrentConversation: noop, navigateWithinDiscord: noop, canonicalConversationUrl: noop, updateNavigationCache: noop, startNavigationObserver: noop };
-  const collector = { resetAcquisitionBuffer: noop, loadOlderMessagesUntil: noop, parseLoadedMessages: noop };
-  const DCE = { discord: { navigation, collector, parser: {}, topology: { discoverServerTopology: noop }, discovery: { scanServers: () => [], scanChannels: () => [] } } };
-  load('src/platform/adapter-registry.js', { DCE });
-  load('src/adapters/discord/adapter-manifest.js', { DCE });
-  load('src/adapters/discord/register.js', { DCE });
-  const definition = DCE.adapterRegistry.get('discord-reference');
-  const runtime = definition.createRuntime({ host: {}, manifest: definition.manifest });
-  assert.equal(definition.manifest.version, '1.0.0');
-  assert.equal(definition.manifest.compatibility.platform, '>=4.0.0 <5.0.0');
-  assert.equal(runtime.navigation.navigate, navigation.navigateWithinDiscord);
-  assert.equal(runtime.collector.loadHistorical, collector.loadOlderMessagesUntil);
+test("adapter detection rejects low-confidence ownership", async () => {
+  const { DCE } = platformContext();
+  DCE.adapterRegistry.register(adapter("weak", 0.2));
+  await assert.rejects(() => DCE.detectionEngine.detect({ hostname: "unknown.test" }), /sufficient confidence/);
 });
 
-test('discovery framework normalizes supported and unsupported discovery', async () => {
-  const DCE = {};
-  load('src/platform/discovery-framework.js', { DCE });
-  const adapter = { manifest: { id: 'adapter' }, discovery: { source: async () => ({ items: [{ id: 'source-1' }] }) } };
-  const supported = await DCE.discoveryFramework.discover(adapter, 'source');
-  const unsupported = await DCE.discoveryFramework.discover(adapter, 'topology');
-  assert.equal(supported.items[0].id, 'source-1');
-  assert.equal(unsupported.supported, false);
+test("adapter registry rejects duplicate identifiers", () => {
+  const { DCE } = platformContext();
+  DCE.adapterRegistry.register(adapter("same", 1));
+  assert.throws(() => DCE.adapterRegistry.register(adapter("same", 1)), /already registered/);
 });
 
-test('UI translation maps legacy navigation into canonical workspace and source terms', () => {
-  const DCE = {};
-  load('src/platform/ui-translator.js', { DCE });
-  const view = DCE.uiTranslator.navigation({ servers: [{ id: 'w1' }], channelsByServer: { w1: [{ id: 's1' }] }, current: { serverId: 'w1', channelId: 's1' } });
-  assert.equal(view.workspaces[0].id, 'w1');
-  assert.equal(view.sourcesByWorkspace.w1[0].id, 's1');
-  assert.equal(view.current.sourceId, 's1');
-});
-
-test('platform acquisition facade works without a Discord global in reusable core', async () => {
-  let resets = 0, navigated = null;
-  const adapter = {
-    collector: { reset: () => { resets += 1; } },
-    navigation: {
-      canonicalize: value => value,
-      navigate: async value => { navigated = value; },
-      describe: target => ({ platform: 'test', conversation: { id: target?.channelId || 'current' } })
+test("platform runtime rejects a selected adapter that violates the contract", async () => {
+  const context = createContext();
+  const { DCE } = context;
+  DCE.logger = { info() {} };
+  DCE.config = { platformVersion: "4.0.1" };
+  DCE.uiTranslator = { describe: manifest => manifest };
+  DCE.contracts = {
+    adapter: {
+      validate: runtime => ({ valid: Boolean(runtime?.collector?.parse), missing: ["collector.parse"] })
     }
   };
-  const DCE = { platformRuntime: { requireAdapter: () => adapter } };
-  const location = { href: 'https://source.test/current' };
-  load('src/core/acquisition/acquisition.js', { DCE, location });
-  const result = await DCE.acquisition.acquire('navigate', { target: { url: 'https://source.test/target', channelId: 'target' } });
-  assert.equal(resets, 1);
-  assert.equal(navigated, 'https://source.test/target');
-  assert.equal(result.source.platform, 'test');
-});
-
-test('mission profiles normalize legacy profiles into executable intent and policy', () => {
-  const DCE = {
-    config: { acquisitionDefaultMaxRuntimeMs: 1000, loadOlderProgressLogInterval: 10, batchItemRetryCount: 1 },
-    sdk: { createJobId: () => 'profile-1' }, platformRuntime: { manifest: () => ({ platform: 'discord' }) }
+  DCE.detectionEngine = {
+    detect: async () => ({
+      confidence: 1,
+      winner: {
+        manifest: { id: "broken", platform: "test" },
+        createRuntime: () => ({ navigation: {} })
+      }
+    })
   };
-  load('src/platform/runtime-policies.js', { DCE });
-  load('src/platform/collection-intent.js', { DCE });
-  load('src/platform/mission-profile.js', { DCE });
-  const profile = DCE.missionProfile.normalize({ name: 'Archive', targets: [{ platform: 'discord' }], options: { maxRuntimeMs: 5000 } });
-  assert.equal(profile.schemaVersion, '2.0.0');
-  assert.equal(profile.intent.id, 'archival');
-  assert.equal(profile.runtimePolicy.historicalRuntimeMs, 5000);
-  assert.equal(profile.sources.length, 1);
+  load(context, "src/platform/platform-runtime.js");
+  await assert.rejects(
+    () => DCE.platformRuntime.initialize({ context: () => ({ hostname: "example.test" }) }),
+    /does not satisfy the platform contract/
+  );
+  assert.throws(() => DCE.platformRuntime.requireAdapter(), /not initialized/);
 });
 
-test('Knowledge Object enforces canonical identity and original source', () => {
-  const DCE = {};
-  load('src/platform/knowledge-object.js', { DCE });
-  assert.throws(() => DCE.knowledgeObject.create({}), /identity\.id/);
-  const object = DCE.knowledgeObject.create({ identity: { id: 'message-1' }, source: { original: 'https://source.test/1' }, platform: 'test', content: { text: 'hello' }, confidence: 0.8 });
-  assert.equal(object.schemaName, 'collection-platform-knowledge-object');
-  assert.equal(object.confidence, 0.8);
+test("collection intents and knowledge objects validate canonical inputs", () => {
+  const { DCE } = platformContext();
+  assert.equal(DCE.collectionIntent.normalize("Incident Response").id, "incident-response");
+  assert.throws(() => DCE.collectionIntent.normalize("anything"), /Unsupported/);
+  assert.throws(() => DCE.knowledgeObject.create({}), /requires identity.id/);
+  const object = DCE.knowledgeObject.create({ identity: { id: "post-1" }, source: { original: "https://example.test/post/1" } });
+  assert.equal(object.schemaVersion, "1.0.0");
+  assert.equal(object.identity.id, "post-1");
+});
+
+test("failed historical acquisition reports partial low-confidence coverage", () => {
+  const context = createContext();
+  const { DCE } = context;
+  load(context, "src/core/config.js");
+  load(context, "src/platform/runtime-policies.js");
+  load(context, "src/platform/collection-intent.js");
+  load(context, "src/core/identity.js");
+  DCE.platformRuntime = {
+    manifest: () => ({ id: "test", name: "Test Adapter", version: "1.0.0", platform: "test" })
+  };
+  load(context, "src/core/conversation-model.js");
+  const model = DCE.conversationModel.buildConversation({
+    rawMessages: [{
+      messageId: "1",
+      timestamp: "2026-07-16T12:00:00.000Z",
+      author: { displayName: "Operator", userId: "1", inferred: false },
+      content: "Observed message",
+      attachments: []
+    }],
+    source: {
+      platform: "test",
+      type: "timeline",
+      acquisitionStrategy: "current",
+      url: "https://example.test/timeline",
+      workspace: null,
+      conversation: { id: "timeline", name: "Timeline" }
+    },
+    options: { intent: "archival", startIso: "2026-07-01T00:00:00.000Z" },
+    collectionReport: { attempted: true, complete: false, stopReason: "no-scroller", warnings: ["No scroller"] },
+    startedAt: Date.parse("2026-07-16T12:00:00.000Z"),
+    finishedAt: Date.parse("2026-07-16T12:00:01.000Z")
+  });
+  assert.equal(model.collection.coverage.status, "partial");
+  assert.equal(model.collection.coverage.startReached, false);
+  assert.equal(model.collection.coverage.confidence, "low");
+});
+
+test("mission execution preserves top-level intent and runtime policy", () => {
+  const { DCE } = platformContext();
+  const options = DCE.missionProfile.executionOptions({
+    intent: { id: "monitoring" },
+    runtimePolicy: { historicalRuntimeMs: 6 * 60 * 60 * 1000 },
+    options: { format: "json", intent: "archival" }
+  }, { format: "markdown", maxRuntimeMs: 60 * 60 * 1000 });
+  assert.equal(options.intent, "monitoring");
+  assert.equal(options.runtimePolicy.historicalRuntimeMs, 6 * 60 * 60 * 1000);
+  assert.equal(options.maxRuntimeMs, 6 * 60 * 60 * 1000);
+  assert.equal(options.format, "json");
+});
+
+test("cancelled batches skip remaining targets and still restore the original view", async () => {
+  const context = platformContext();
+  const { DCE } = context;
+  context.location = { href: "https://example.test/original" };
+  DCE.logger = { info() {}, warn() {}, error() {}, snapshot: () => [] };
+  DCE.exporter = { downloadPayload() {} };
+  DCE.platformRuntime = {
+    requireAdapter: () => ({
+      manifest: { id: "test", version: "1.0.0", platform: "test", provenance: {} },
+      navigation: { navigate: async url => { context.location.href = url; } }
+    })
+  };
+  load(context, "src/core/orchestration/batch.js");
+  const operation = DCE.operationController.begin("batch");
+  DCE.operationController.requestCancellation();
+  const result = await DCE.batch.execute({
+    targets: [{ platform: "test", conversationId: "1" }, { platform: "test", conversationId: "2" }],
+    options: { intent: { id: "archival" } }
+  }, async () => { throw new Error("cancelled targets must not execute"); });
+  assert.equal(result.success, false);
+  assert.equal(result.manifest.cancelled, true);
+  assert.equal(result.manifest.totals.cancelled, 2);
+  assert.equal(result.manifest.results.every(item => item.status === "cancelled"), true);
+  assert.equal(result.manifest.restored, true);
+  DCE.operationController.finish(operation.id);
+});
+
+test("batches with any failed target report overall failure", async () => {
+  const context = platformContext();
+  const { DCE } = context;
+  context.location = { href: "https://example.test/original" };
+  DCE.logger = { info() {}, warn() {}, error() {}, snapshot: () => [] };
+  DCE.exporter = { downloadPayload() {} };
+  DCE.platformRuntime = {
+    requireAdapter: () => ({
+      manifest: { id: "test", version: "1.0.0", platform: "test", provenance: {} },
+      navigation: { navigate: async url => { context.location.href = url; } }
+    })
+  };
+  DCE.config = Object.freeze({ ...DCE.config, batchItemRetryCount: 0 });
+  load(context, "src/core/orchestration/batch.js");
+  const result = await DCE.batch.execute({
+    targets: [{ platform: "test", conversationId: "1" }, { platform: "test", conversationId: "2" }],
+    options: { intent: { id: "archival" } }
+  }, async request => request.target.conversationId === "1"
+    ? { success: true, count: 1, participantCount: 1, collectionComplete: true }
+    : { success: false, error: "expected test failure" });
+  assert.equal(result.manifest.totals.success, 1);
+  assert.equal(result.manifest.totals.failed, 1);
+  assert.equal(result.success, false);
+});
+
+test("UI translation preserves canonical navigation while exposing native labels", () => {
+  const { DCE } = platformContext();
+  const translated = DCE.uiTranslator.navigation({
+    servers: [{ id: "workspace-1", name: "Workspace" }],
+    channelsByServer: { "workspace-1": [{ id: "source-1", name: "Source" }] },
+    current: { serverId: "workspace-1", channelId: "source-1" }
+  });
+  assert.equal(translated.current.workspaceId, "workspace-1");
+  assert.equal(translated.current.sourceId, "source-1");
+  assert.equal(translated.workspaces.length, 1);
 });

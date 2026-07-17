@@ -1,7 +1,7 @@
 (() => {
   const DCE = globalThis.DCE;
   DCE.discord.adapterManifest = Object.freeze({
-    id: "discord-reference", name: "Discord Reference Adapter", version: "1.0.0", platform: "discord",
+    id: "discord-reference", name: "Discord Reference Adapter", version: "1.0.1", platform: "discord",
     compatibility: { platform: ">=4.0.0 <5.0.0", conversationSchema: "2.x", topologySchema: "1.x" },
     capabilities: Object.freeze({
       timeline: false, thread: true, forum: true, batch: true, search: false,

@@ -73,6 +73,16 @@
     const missingIdentity = messages.filter(message => !message.participantId).length;
     const inferredIdentity = messages.filter(message => message.flags.authorInferred).length;
     if (missingIdentity) warnings.push(`${missingIdentity} messages have no resolved participant.`);
+    const coverage = collectionReport?.coverage || (collectionReport?.attempted
+      ? {
+          status: "partial",
+          startReached: false,
+          requestedStart: options.startIso || null,
+          earliestAcquired: null,
+          latestAcquired: null,
+          confidence: "low"
+        }
+      : { status: "not-requested", startReached: true, confidence: "high" });
 
     return {
       metadata: {
@@ -105,7 +115,7 @@
         participantCount: participantsMap.size,
         identityEngineVersion: DCE.config.identityEngineVersion,
         loadOlder: collectionReport || null,
-        coverage: collectionReport?.coverage || { status: "not-requested", startReached: true, confidence: "high" }
+        coverage
       },
       participants: Array.from(participantsMap.values()),
       messages,

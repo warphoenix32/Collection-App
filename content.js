@@ -1,6 +1,5 @@
 (() => {
   const DCE = globalThis.DCE;
-  let activeOperation = null;
   const ready = DCE.platformRuntime.initialize();
   console.log(`Collection Platform ${DCE.config.platformVersion} loaded.`);
 
@@ -24,13 +23,14 @@
   }
 
   async function runExclusive(kind, operation) {
-    if (activeOperation) return { success: false, error: `A ${activeOperation.kind} operation is already running.`, busy: true };
-    activeOperation = { kind, startedAt: new Date().toISOString() };
-    DCE.logger.info("operation.started", activeOperation);
+    let operationState;
+    try { operationState = DCE.operationController.begin(kind); }
+    catch (error) { return { success: false, error: error.message, busy: true }; }
+    DCE.logger.info("operation.started", operationState);
     try { return await operation(); }
     finally {
-      DCE.logger.info("operation.finished", { ...activeOperation, finishedAt: new Date().toISOString() });
-      activeOperation = null;
+      DCE.logger.info("operation.finished", { ...DCE.operationController.snapshot(), finishedAt: new Date().toISOString() });
+      DCE.operationController.finish(operationState.id);
     }
   }
 
@@ -44,7 +44,7 @@
         try {
           const adapter = DCE.platformRuntime.requireAdapter();
           const navigation = request.forceRefresh ? await adapter.navigation.updateCache() : await DCE.cache.readNavigationCache();
-          sendResponse({ success: true, navigation, uiNavigation: DCE.uiTranslator.navigation(navigation), currentConversation: adapter.navigation.describe(), profiles: await DCE.profiles.list(), validation: DCE.validation.runtimeReport(), adapter: DCE.uiTranslator.describe(adapter.manifest) });
+          sendResponse({ success: true, navigation, uiNavigation: DCE.uiTranslator.navigation(navigation), currentConversation: adapter.navigation.describe(), profiles: await DCE.profiles.list(), validation: DCE.validation.runtimeReport(), adapter: DCE.uiTranslator.describe(adapter.manifest), activeOperation: DCE.operationController.snapshot() });
         } catch (error) { sendResponse({ success: false, error: error.message }); }
       }, error => sendResponse({ success: false, error: error.message }));
       return true;
@@ -71,7 +71,13 @@
       return true;
     }
     if (request.action === "getRuntimeReport") {
-      ready.then(() => sendResponse({ success: true, report: DCE.validation.runtimeReport(), logs: DCE.logger.snapshot(), activeOperation }), error => sendResponse({ success: false, error: error.message }));
+      ready.then(() => sendResponse({ success: true, report: DCE.validation.runtimeReport(), logs: DCE.logger.snapshot(), activeOperation: DCE.operationController.snapshot() }), error => sendResponse({ success: false, error: error.message }));
+      return true;
+    }
+    if (request.action === "cancelOperation") {
+      const result = DCE.operationController.requestCancellation(request.reason || "operator-requested");
+      if (result.accepted) DCE.logger.warn("operation.cancellation.requested", result.operation);
+      sendResponse({ success: result.accepted, ...result });
       return true;
     }
   });

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Collection Platform",
-  "version": "4.0.0",
-  "version_name": "4.0.0 — Knowledge Acquisition Runtime",
+  "version": "4.0.1",
+  "version_name": "4.0.1 — Stability and Operator Control",
   "description": "Adapter-driven Knowledge Acquisition Runtime with the Discord production reference adapter.",
   "permissions": [
     "activeTab",
@@ -21,6 +21,7 @@
       "js": [
         "src/core/namespace.js",
         "src/core/config.js",
+        "src/platform/operation-controller.js",
         "src/platform/host/browser-extension-host.js",
         "src/platform/adapter-registry.js",
         "src/platform/detection-engine.js",

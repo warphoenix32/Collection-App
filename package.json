@@ -1,10 +1,14 @@
 {
-  "name": "collection-platform-discord-adapter",
-  "version": "4.0.0",
+  "name": "collection-platform-browser-extension",
+  "version": "4.0.1",
   "private": true,
+  "description": "Adapter-driven knowledge acquisition runtime with the Discord reference adapter.",
   "scripts": {
-    "test": "node --test tests/*.test.js",
-    "check": "node tests/static-check.js && node --test tests/*.test.js"
+    "check": "node tests/static-check.js && node --test tests/*.test.js",
+    "check:syntax": "node tests/static-check.js",
+    "test": "node --test tests/*.test.js"
   },
-  "engines": { "node": ">=18" }
+  "engines": {
+    "node": ">=18"
+  }
 }

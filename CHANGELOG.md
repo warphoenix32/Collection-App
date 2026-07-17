@@ -1,5 +1,16 @@
 # Changelog
 
+## 4.0.1 — Stability and Operator Control
+
+- Added cooperative cancellation for long historical and batch operations.
+- Preserved accumulated messages as an honest partial export after operator cancellation.
+- Marked unstarted batch targets as cancelled and retained original-view restoration.
+- Added a minimum detection-confidence threshold so weak adapter matches cannot claim a page.
+- Clamped runtime policies consistently so executed and reported limits agree.
+- Preserved top-level mission intent and runtime policy when saved profiles execute.
+- Moved popup styling into `popup.css` and hardened adapter-driven mode selection.
+- Restored the zero-dependency Node validation package with static architecture checks and automated platform tests.
+
 ## 4.0.0 — Architecture Evolution
 
 - Established independent Collection Platform 4.x and Discord Adapter 1.x versioning.

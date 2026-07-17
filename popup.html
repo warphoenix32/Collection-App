@@ -4,28 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Collection Platform</title>
-  <style>
-    :root { color-scheme: light dark; }
-    body { width: 420px; margin: 0; padding: 16px; font-family: Arial, sans-serif; color: CanvasText; background: Canvas; }
-    h1 { margin: 0; font-size: 18px; } .version { margin-top: 3px; font-size: 11px; opacity: .65; }
-    label { display: block; margin-top: 12px; font-size: 12px; font-weight: 700; }
-    select, input { width: 100%; box-sizing: border-box; margin-top: 5px; padding: 8px; border: 1px solid #8886; border-radius: 6px; background: Canvas; color: CanvasText; }
-    select[multiple] { min-height: 132px; }
-    .row { display: flex; gap: 8px; } .row > div { flex: 1; }
-    [hidden] { display: none !important; }
-    .check { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 13px; font-weight: 400; }
-    .check input { width: auto; margin: 0; }
-    button { width: 100%; margin-top: 10px; padding: 10px; border: 0; border-radius: 7px; background: #5865f2; color: white; font-weight: 700; cursor: pointer; }
-    button.secondary { background: #8883; color: CanvasText; border: 1px solid #8886; }
-    button.danger { background: #b3261e; } button:disabled { opacity: .55; cursor: not-allowed; }
-    #status { margin-top: 12px; padding: 9px; min-height: 32px; border-radius: 6px; background: #8881; white-space: pre-wrap; font-size: 12px; }
-    .hint { margin-top: 5px; font-size: 11px; opacity: .72; }
-    .profile-actions { display:flex; gap:8px; } .profile-actions button { flex:1; }
-  </style>
+  <link rel="stylesheet" href="popup.css">
 </head>
 <body>
   <h1>Collection Platform</h1>
-  <div class="version">Knowledge Acquisition Runtime · v4.0.0</div>
+  <div class="version">Knowledge Acquisition Runtime · v4.0.1</div>
 
   <label for="sourceMode">Operation</label>
   <select id="sourceMode">
@@ -110,6 +93,7 @@
   <label class="check"><input id="loadOlder" type="checkbox" checked>Load older messages when a time range is selected</label>
 
   <button id="exportButton" disabled>Execute Collection</button>
+  <button id="cancelButton" class="danger" hidden>Stop Active Collection</button>
   <button id="topologyButton" class="secondary" disabled>Export Current Server Topology</button>
   <div class="hint">Observes topology metadata already visible to the active platform client. It does not navigate or collect messages.</div>
   <button id="refreshButton" class="secondary">Refresh Navigation Cache</button>

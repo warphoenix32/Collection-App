@@ -94,6 +94,9 @@
     const started = Date.now();
     let delay = DCE.config.loadOlderInitialDelayMs;
     while (Date.now() - started < timeoutMs) {
+      if (DCE.operationController?.isCancellationRequested?.()) {
+        return { advanced: false, cancelled: true, snapshot: getRenderedSnapshot(), waitedMs: Date.now() - started };
+      }
       await sleep(delay);
       accumulateRenderedMessages();
       const after = getRenderedSnapshot();
@@ -198,6 +201,11 @@
     let consecutiveStalls = 0;
 
     while (true) {
+      if (DCE.operationController?.isCancellationRequested?.()) {
+        report.stopReason = "operator-cancelled";
+        report.warnings.push("Collection was stopped by the operator. The acquired messages were preserved as a partial export.");
+        break;
+      }
       if (snapshot.earliestAcquired !== null && snapshot.earliestAcquired <= cutoff) {
         report.complete = true;
         report.stopReason = "cutoff-reached";
@@ -216,6 +224,12 @@
       await scrollToOldest(scroller);
       const progress = await waitForProgress(before, DCE.config.loadOlderMaxWaitMs);
       snapshot = progress.snapshot;
+
+      if (progress.cancelled) {
+        report.stopReason = "operator-cancelled";
+        report.warnings.push("Collection was stopped by the operator. The acquired messages were preserved as a partial export.");
+        break;
+      }
 
       if (progress.advanced) {
         consecutiveStalls = 0;

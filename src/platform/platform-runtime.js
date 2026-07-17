@@ -6,6 +6,11 @@
     detection = await DCE.detectionEngine.detect(host.context());
     active = detection.winner.createRuntime({ host, manifest: detection.winner.manifest });
     active.manifest = detection.winner.manifest;
+    const contract = DCE.contracts?.adapter?.validate?.(active);
+    if (contract && !contract.valid) {
+      active = null;
+      throw new Error(`Selected adapter does not satisfy the platform contract: ${contract.missing.join(", ")}`);
+    }
     DCE.logger.info("platform.adapter.selected", { adapterId: active.manifest.id, confidence: detection.confidence });
     return active;
   }
