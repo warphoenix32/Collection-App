@@ -2,17 +2,14 @@
   const DCE = globalThis.DCE;
 
   function runtimeReport() {
-    const adapter = {
-      platform: "discord",
-      ...DCE.discord.discovery,
-      ...DCE.discord.topology,
-      ...DCE.discord.navigation,
-      ...DCE.discord.collector
-    };
+    const adapter = DCE.platformRuntime.requireAdapter();
     const contract = DCE.contracts.adapter.validate(adapter);
     return {
       timestamp: new Date().toISOString(),
       extensionVersion: DCE.config.extensionVersion,
+      platformVersion: DCE.config.platformVersion,
+      adapter: DCE.uiTranslator.describe(adapter.manifest),
+      registry: DCE.adapterRegistry.manifests().map(item => ({ id: item.id, version: item.version, platform: item.platform, capabilities: item.capabilities })),
       schemaVersion: DCE.config.schemaVersion,
       adapterContract: contract,
       capabilities: DCE.contracts.adapter.capabilities(adapter),

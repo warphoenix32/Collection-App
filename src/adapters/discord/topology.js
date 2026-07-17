@@ -96,7 +96,7 @@
     }
 
     DCE.logger.info("topology.discovery.completed", { serverId: server.id, categories: categories.length, channels: channels.length });
-    return { server, categories, channels, observedAt: new Date().toISOString(), sourceUrl: location.href };
+    return { platform: "discord", server, categories, channels, observedAt: new Date().toISOString(), sourceUrl: location.href };
   }
 
   DCE.discord.topology = { discoverServerTopology };

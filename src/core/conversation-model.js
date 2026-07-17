@@ -10,6 +10,8 @@
   }
 
   function normalizeMessage(raw, participants) {
+    let manifest = { id: "unknown", platform: "unknown" };
+    try { manifest = DCE.platformRuntime.manifest(); } catch (_) {}
     const participant = DCE.identity.resolve(participants, raw.author);
     return {
       messageId: raw.messageId,
@@ -27,7 +29,7 @@
         resolved: Boolean(raw.replyMessageId)
       } : null,
       mentions: (raw.mentions || []).map(item => ({
-        participantId: item.userId ? `discord-user-${item.userId}` : null,
+        participantId: item.userId ? `${manifest.platform}-user-${item.userId}` : null,
         platformUserId: item.userId || null,
         displayText: item.originalText
       })),
@@ -38,13 +40,17 @@
         authorInferred: Boolean(raw.author?.inferred)
       },
       provenance: {
-        adapter: "discord",
+        adapter: manifest.id,
         sourceElementId: raw.sourceElementId || null
       }
     };
   }
 
   function buildConversation({ rawMessages, source, options, collectionReport, startedAt, finishedAt }) {
+    let manifest = { id: "unknown", name: "Adapter", version: DCE.config.adapterVersion, platform: source.platform || "unknown" };
+    try { manifest = DCE.platformRuntime.manifest(); } catch (_) {}
+    const intent = DCE.collectionIntent.normalize(options.intent?.id || options.intent || "archival");
+    const runtimePolicy = DCE.runtimePolicies.resolve(options.runtimePolicy || { historicalRuntimeMs: options.maxRuntimeMs });
     const participantsMap = buildParticipants(rawMessages);
     const messages = rawMessages.map(message => normalizeMessage(message, participantsMap));
     const byId = new Map(messages.map(message => [message.messageId, message]));
@@ -67,6 +73,16 @@
     const missingIdentity = messages.filter(message => !message.participantId).length;
     const inferredIdentity = messages.filter(message => message.flags.authorInferred).length;
     if (missingIdentity) warnings.push(`${missingIdentity} messages have no resolved participant.`);
+    const coverage = collectionReport?.coverage || (collectionReport?.attempted
+      ? {
+          status: "partial",
+          startReached: false,
+          requestedStart: options.startIso || null,
+          earliestAcquired: null,
+          latestAcquired: null,
+          confidence: "low"
+        }
+      : { status: "not-requested", startReached: true, confidence: "high" });
 
     return {
       metadata: {
@@ -75,10 +91,11 @@
         exportId: crypto.randomUUID ? crypto.randomUUID() : `export-${Date.now()}`,
         exportedAt: new Date(finishedAt).toISOString(),
         collectorVersion: DCE.config.extensionVersion,
-        adapterVersion: DCE.config.adapterVersion
+        platformVersion: DCE.config.platformVersion,
+        adapterVersion: manifest.version
       },
       source: {
-        platform: "discord",
+        platform: source.platform || manifest.platform,
         conversationType: source.type,
         acquisitionStrategy: source.acquisitionStrategy,
         url: source.url,
@@ -98,7 +115,7 @@
         participantCount: participantsMap.size,
         identityEngineVersion: DCE.config.identityEngineVersion,
         loadOlder: collectionReport || null,
-        coverage: collectionReport?.coverage || { status: "not-requested", startReached: true, confidence: "high" }
+        coverage
       },
       participants: Array.from(participantsMap.values()),
       messages,
@@ -111,8 +128,19 @@
         excludedMedia: DCE.config.excludedMedia
       },
       provenance: {
-        generatedBy: "Collection Platform Discord Adapter",
-        normalizedFrom: "live-discord-dom"
+        generatedBy: `Collection Platform / ${manifest.name}`,
+        normalizedFrom: `${manifest.platform}-adapter`,
+        platform: manifest.platform,
+        adapterId: manifest.id,
+        adapterVersion: manifest.version,
+        platformVersion: DCE.config.platformVersion,
+        collectorVersion: DCE.config.extensionVersion,
+        collectionIntent: intent.id,
+        runtimePolicy,
+        collectionTime: { startedAt: new Date(startedAt).toISOString(), finishedAt: new Date(finishedAt).toISOString() },
+        confidence: collectionReport?.coverage?.confidence || "high",
+        acquisitionMethod: source.acquisitionStrategy || "current",
+        originalSource: source.url || null
       }
     };
   }

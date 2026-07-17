@@ -1,4 +1,41 @@
-# Release Notes — v3.6.0
+# Release Notes — Collection Platform v4.0.1
+
+## Stability and Operator Control
+
+Version 4.0.1 is a backward-compatible maintenance release. Long historical collections and batches can now be stopped by the operator without discarding already acquired messages. The collector finishes its current loading step, emits a partial export with explicit coverage, stops unstarted batch targets, and restores the original view.
+
+Adapter detection now requires a configurable minimum confidence. Runtime policies are clamped consistently across execution and provenance, and saved mission profiles preserve their declared intent and runtime policy when run.
+
+The development package again includes `package.json` and the automated validation suite referenced by the documentation.
+
+### Validation
+
+- 39 manifest-loaded production scripts pass syntax and existence validation.
+- Reusable core/platform modules pass the no-Discord-coupling gate.
+- Nine automated tests pass for detection, registry behavior, runtime policy, mission execution, cancellation, restoration, intent, Knowledge Objects, and UI translation.
+
+---
+
+# Previous Release Notes — Collection Platform v4.0.0
+
+## Architecture Evolution
+
+Discord Reference Adapter v3.6.0 LTS is frozen at Git tag `discord-reference-adapter-v3.6.0-lts`. Its platform release identity is now Discord Adapter v1.0.0, compatible with Collection Platform v4.x.
+
+Version 4.0 introduces adapter detection, registry and manifests, canonical UI translation, normalized discovery, host abstraction, runtime policy, collection intent, executable mission profiles, Knowledge Object 1.0, and complete acquisition provenance. The stable Discord implementation is wrapped rather than rewritten.
+
+No X, Reddit, AI reasoning, search automation, permission bypass, or historical acquisition redesign is included.
+
+### Validation
+
+- All manifest scripts parse and exist.
+- Platform-core tests prove confidence selection and operation without a Discord global.
+- Discord recovery, deduplication, concurrency, topology, and acquisition isolation regressions pass.
+- Live authenticated Discord acceptance remains governed by `docs/FINAL_VALIDATION.md`.
+
+---
+
+# Previous Release Notes — v3.6.0
 
 ## Server Topology Discovery
 

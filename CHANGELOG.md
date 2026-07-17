@@ -1,5 +1,27 @@
 # Changelog
 
+## 4.0.1 — Stability and Operator Control
+
+- Added cooperative cancellation for long historical and batch operations.
+- Preserved accumulated messages as an honest partial export after operator cancellation.
+- Marked unstarted batch targets as cancelled and retained original-view restoration.
+- Added a minimum detection-confidence threshold so weak adapter matches cannot claim a page.
+- Clamped runtime policies consistently so executed and reported limits agree.
+- Preserved top-level mission intent and runtime policy when saved profiles execute.
+- Moved popup styling into `popup.css` and hardened adapter-driven mode selection.
+- Restored the zero-dependency Node validation package with static architecture checks and automated platform tests.
+
+## 4.0.0 — Architecture Evolution
+
+- Established independent Collection Platform 4.x and Discord Adapter 1.x versioning.
+- Added confidence-based platform detection and adapter selection.
+- Added adapter registry, self-describing manifests, compatibility metadata, and lifecycle state.
+- Added canonical workspace/source UI translation with adapter-native labels.
+- Added host abstraction, discovery framework, runtime policy, collection intent, executable mission profile, and Knowledge Object models.
+- Routed acquisition, export, batch, topology, identity, provenance, and validation through the selected adapter facade.
+- Preserved the Discord v3.6.0 LTS collector, parser, recovery, checkpoint, and conversation behavior.
+- Added planner and plugin lifecycle architecture without AI reasoning or a second adapter.
+
 ## 3.6.0 — Server Topology Discovery
 
 - Added observational Discord server topology discovery.

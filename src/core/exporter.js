@@ -38,12 +38,14 @@
   }
 
   async function exportConversation(options, source) {
+    const adapter = DCE.platformRuntime.requireAdapter();
     const startedAt = Date.now();
     let collectionReport = { complete: true, attempted: false, warnings: [] };
     if (options.loadOlder && options.startIso) {
-      collectionReport = await DCE.discord.collector.loadOlderMessagesUntil(options.startIso, { maxRuntimeMs: options.maxRuntimeMs });
+      const runtimePolicy = DCE.runtimePolicies.resolve(options.runtimePolicy || { historicalRuntimeMs: options.maxRuntimeMs });
+      collectionReport = await adapter.collector.loadHistorical(options.startIso, { maxRuntimeMs: runtimePolicy.historicalRuntimeMs });
     }
-    const rawMessages = DCE.discord.collector.parseLoadedMessages()
+    const rawMessages = adapter.collector.parse()
       .filter(message => messageInRange(message, options.startIso, options.endIso));
     if (!rawMessages.length) return { success: false, error: "No messages matched the selected range." };
 

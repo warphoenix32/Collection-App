@@ -1,8 +1,17 @@
-# Collection Platform — Discord Reference Adapter v3.6.0
+# Collection Platform v4.0.1
 
 ## BLUF
 
-This is the final feature release of the Discord adapter. It preserves current-conversation, navigation, batch, profiles, normalized exports, and identity handling while replacing fragile historical loading with a fault-tolerant acquisition process.
+Collection Platform is an adapter-driven Knowledge Acquisition Runtime. Discord Reference Adapter v1.0.1 is the first production adapter and preserves the complete Discord v3.6.0 LTS behavior baseline with additive operator-control fixes.
+
+Platform detection selects the highest-confidence installed adapter. The adapter registry exposes capabilities, sources, entities, exports, runtime policies, topology support, and native UI terminology. Conversation Schema 2.x remains operational while Knowledge Object 1.0 is additive.
+
+## Branch policy
+
+- `main`: immutable production baseline, tagged `discord-reference-adapter-v3.6.0-lts`.
+- `development`: Collection Platform v4 evolution and integration.
+
+Experimental work does not occur on `main`.
 
 ## Final capability set
 
@@ -17,6 +26,15 @@ This is the final feature release of the Discord adapter. It preserves current-c
 - Exact custom start and end timestamps
 - Configurable historical runtime from five minutes through 24 hours, with a three-hour default
 - Server Topology Discovery with independent JSON and Markdown inventory exports
+- Cooperative cancellation for long historical and batch collections
+- Cancelled batches preserve completed/partial exports, mark unstarted targets, and restore the original view
+- Confidence-gated adapter selection to prevent low-confidence adapters from claiming unsupported pages
+
+## X compatibility
+
+The packaged extension does not currently connect to X.com or X Pro (formerly TweetDeck). It intentionally does not scrape either interface: X requires automated collection to use its published interfaces unless the operator has separate written permission.
+
+X Pro remains useful as an operator-facing monitoring workspace, but its rendered columns are not a supported acquisition source. A direct Collection Platform integration should use the official X API recent search, full-archive search, filtered stream, or webhook products. That requires an X developer project, operator-supplied credentials, explicit usage-cost controls, and API-specific provenance. See [`docs/X_INTEGRATION.md`](docs/X_INTEGRATION.md).
 
 ## Server Topology Discovery
 
@@ -39,7 +57,7 @@ Targeted Collection/native-search automation is not included. It was retired bec
 
 ## Historical acquisition behavior
 
-Discord virtualizes messages: older rendered nodes can disappear as additional history loads. v3.5.1 parses and accumulates every rendered window during acquisition, then deduplicates the complete in-session buffer before export.
+Discord virtualizes messages: older rendered nodes can disappear as additional history loads. The v3.6 reference implementation parses and accumulates every rendered window during acquisition, then deduplicates the complete in-session buffer before export.
 
 The adapter performs recovery when Discord stalls and continues until it reaches the requested start date or the operator-selected runtime budget. The default budget is three hours per conversation and can be set from five minutes through 24 hours. Runtime expiration is evaluated between loading cycles so the active cycle completes cleanly. Acquisition is not terminated by attempt count, throughput, or efficiency metrics. An incomplete result remains exportable but is explicitly reported as partial with coverage metadata and warnings.
 
@@ -59,7 +77,7 @@ Future work should be maintenance-only unless Discord changes its rendered inter
 
 ## Engineering checks
 
-Node.js 18 or newer is required only for development checks; the extension itself has no package dependencies.
+Node.js 18 or newer is required only for development checks; the extension itself has no package dependencies. The validation suite is included in this package.
 
 ```text
 npm run check
@@ -71,3 +89,11 @@ On Windows systems that block PowerShell scripts, run the equivalent commands di
 node tests/static-check.js
 node --test tests/*.test.js
 ```
+
+On Windows PowerShell installations that block `npm.ps1`, use:
+
+```text
+npm.cmd run check
+```
+
+See [`docs/README.md`](docs/README.md) for the documentation map and authority order.

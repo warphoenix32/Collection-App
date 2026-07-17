@@ -1,17 +1,22 @@
-# Adapter Contract v1.0.0
+# Platform Adapter Contract v2.0.0
 
 A platform adapter must expose the capabilities required to translate a platform-specific conversation surface into the Collection Platform pipeline.
 
-Required functions:
+Required canonical functions:
 
-- `describeCurrentConversation()`
-- `navigateWithinDiscord()` or platform-equivalent navigation
-- `parseLoadedMessages()`
-- `loadOlderMessagesUntil()`
+- `navigation.describe()`
+- `navigation.navigate()`
+- `collector.parse()`
+- `collector.loadHistorical()`
 
-Optional discovery functions:
+Every registration supplies `manifest`, `detect(context)`, and `createRuntime(context)`. The manifest declares identity, independent version, platform compatibility, capabilities, sources, entities, exports, runtime policies, UI definition, topology/historical support, provenance method, storage keys, and lifecycle.
 
-- `scanServers()` / workspace discovery
-- `scanChannels()` / conversation discovery
+Normalized discovery handlers are optional:
 
-The current function names retain Discord-era compatibility. A future second adapter will drive the final platform-neutral naming revision.
+- `discovery.capability()`
+- `discovery.source()`
+- `discovery.entity()`
+- `discovery.relationship()`
+- `discovery.topology()`
+
+Legacy source-native functions may remain inside the adapter but are not exposed to reusable core modules.

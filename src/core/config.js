@@ -1,16 +1,15 @@
 (() => {
   const DCE = globalThis.DCE;
   DCE.config = Object.freeze({
-    extensionVersion: "3.6.0",
-    adapterVersion: "3.6.0",
+    extensionVersion: "4.0.1",
+    platformVersion: "4.0.1",
+    adapterVersion: "1.0.1",
     schemaVersion: "2.0.0",
     identityEngineVersion: "1.0.0",
-    platformVersion: "3.6.0",
     topologySchemaVersion: "1.0.0",
-    adapterContractVersion: "1.0.0",
+    adapterContractVersion: "2.0.0",
+    adapterDetectionMinimumConfidence: 0.5,
     profileStorageKey: "collectionPlatformProfiles",
-    navigationCacheKey: "discordNavigationCache",
-    acquisitionCheckpointKey: "discordAcquisitionCheckpoint",
     diagnosticLogKey: "collectionPlatformDiagnosticLog",
     navigationRefreshDebounceMs: 250,
     navigationPathTimeoutMs: 12000,

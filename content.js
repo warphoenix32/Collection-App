@@ -1,7 +1,7 @@
 (() => {
   const DCE = globalThis.DCE;
-  let activeOperation = null;
-  console.log(`Collection Platform ${DCE.config.extensionVersion} / Discord Adapter loaded.`);
+  const ready = DCE.platformRuntime.initialize();
+  console.log(`Collection Platform ${DCE.config.platformVersion} loaded.`);
 
   async function executeExport(request, execution = {}) {
     let context = null;
@@ -11,7 +11,7 @@
       context = await DCE.acquisition.acquire(request.strategy, request);
       const result = await DCE.exporter.exportConversation(request.options, context.source);
       if (restoreAfter) restored = await DCE.acquisition.restore(context);
-      await DCE.discord.navigation.updateNavigationCache();
+      await DCE.platformRuntime.requireAdapter().navigation.updateCache();
       return { ...result, restored };
     } catch (error) {
       DCE.logger.error("export.failed", { error: error.message, strategy: request.strategy });
@@ -23,45 +23,47 @@
   }
 
   async function runExclusive(kind, operation) {
-    if (activeOperation) return { success: false, error: `A ${activeOperation.kind} operation is already running.`, busy: true };
-    activeOperation = { kind, startedAt: new Date().toISOString() };
-    DCE.logger.info("operation.started", activeOperation);
+    let operationState;
+    try { operationState = DCE.operationController.begin(kind); }
+    catch (error) { return { success: false, error: error.message, busy: true }; }
+    DCE.logger.info("operation.started", operationState);
     try { return await operation(); }
     finally {
-      DCE.logger.info("operation.finished", { ...activeOperation, finishedAt: new Date().toISOString() });
-      activeOperation = null;
+      DCE.logger.info("operation.finished", { ...DCE.operationController.snapshot(), finishedAt: new Date().toISOString() });
+      DCE.operationController.finish(operationState.id);
     }
   }
 
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "ping") {
-      sendResponse({ success: true, version: DCE.config.extensionVersion, validation: DCE.validation.runtimeReport() });
-      return;
+      ready.then(() => sendResponse({ success: true, version: DCE.config.platformVersion, validation: DCE.validation.runtimeReport() }), error => sendResponse({ success: false, error: error.message }));
+      return true;
     }
     if (request.action === "getNavigationSnapshot") {
-      (async () => {
+      ready.then(async () => {
         try {
-          const navigation = request.forceRefresh ? await DCE.discord.navigation.updateNavigationCache() : await DCE.cache.readNavigationCache();
-          sendResponse({ success: true, navigation, currentConversation: DCE.discord.navigation.describeCurrentConversation(), profiles: await DCE.profiles.list(), validation: DCE.validation.runtimeReport() });
+          const adapter = DCE.platformRuntime.requireAdapter();
+          const navigation = request.forceRefresh ? await adapter.navigation.updateCache() : await DCE.cache.readNavigationCache();
+          sendResponse({ success: true, navigation, uiNavigation: DCE.uiTranslator.navigation(navigation), currentConversation: adapter.navigation.describe(), profiles: await DCE.profiles.list(), validation: DCE.validation.runtimeReport(), adapter: DCE.uiTranslator.describe(adapter.manifest), activeOperation: DCE.operationController.snapshot() });
         } catch (error) { sendResponse({ success: false, error: error.message }); }
-      })();
+      }, error => sendResponse({ success: false, error: error.message }));
       return true;
     }
     if (request.action === "executeExport") {
-      runExclusive("collection", () => executeExport(request)).then(sendResponse, error => sendResponse({ success: false, error: error.message }));
+      ready.then(() => runExclusive("collection", () => executeExport(request))).then(sendResponse, error => sendResponse({ success: false, error: error.message }));
       return true;
     }
     if (request.action === "executeBatch") {
-      runExclusive("batch", () => DCE.batch.execute(request, executeExport)).then(sendResponse, error => sendResponse({ success: false, error: error.message }));
+      ready.then(() => runExclusive("batch", () => DCE.batch.execute(request, executeExport))).then(sendResponse, error => sendResponse({ success: false, error: error.message }));
       return true;
     }
     if (request.action === "exportServerTopology") {
-      runExclusive("topology discovery", () => DCE.topologyExporter.exportServerTopology(request.format))
+      ready.then(() => runExclusive("topology discovery", () => DCE.topologyExporter.exportServerTopology(request.format, { intent: request.intent })))
         .then(sendResponse, error => sendResponse({ success: false, error: error.message }));
       return true;
     }
     if (request.action === "saveProfile") {
-      DCE.profiles.save(request.profile).then(profile => sendResponse({ success: true, profile })).catch(error => sendResponse({ success: false, error: error.message }));
+      ready.then(() => DCE.profiles.save(request.profile)).then(profile => sendResponse({ success: true, profile })).catch(error => sendResponse({ success: false, error: error.message }));
       return true;
     }
     if (request.action === "deleteProfile") {
@@ -69,14 +71,21 @@
       return true;
     }
     if (request.action === "getRuntimeReport") {
-      sendResponse({ success: true, report: DCE.validation.runtimeReport(), logs: DCE.logger.snapshot(), activeOperation });
-      return;
+      ready.then(() => sendResponse({ success: true, report: DCE.validation.runtimeReport(), logs: DCE.logger.snapshot(), activeOperation: DCE.operationController.snapshot() }), error => sendResponse({ success: false, error: error.message }));
+      return true;
+    }
+    if (request.action === "cancelOperation") {
+      const result = DCE.operationController.requestCancellation(request.reason || "operator-requested");
+      if (result.accepted) DCE.logger.warn("operation.cancellation.requested", result.operation);
+      sendResponse({ success: result.accepted, ...result });
+      return true;
     }
   });
 
-  const adapter = { platform: "discord", ...DCE.discord.discovery, ...DCE.discord.topology, ...DCE.discord.navigation, ...DCE.discord.collector };
-  const contract = DCE.contracts.adapter.validate(adapter);
-  if (!contract.valid) DCE.logger.error("adapter.contract.invalid", contract);
-  else DCE.logger.info("adapter.contract.valid", DCE.contracts.adapter.capabilities(adapter));
-  DCE.discord.navigation.startNavigationObserver();
+  ready.then(adapter => {
+    const contract = DCE.contracts.adapter.validate(adapter);
+    if (!contract.valid) DCE.logger.error("adapter.contract.invalid", contract);
+    else DCE.logger.info("adapter.contract.valid", DCE.contracts.adapter.capabilities(adapter));
+    adapter.navigation.startObserver?.();
+  }).catch(error => DCE.logger.error("platform.initialization.failed", { error: error.message }));
 })();

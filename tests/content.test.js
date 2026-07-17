@@ -4,6 +4,7 @@ const { load } = require('./helpers');
 
 function setup(overrides = {}) {
   let listener;
+  let activeOperation = null;
   const chrome = { runtime: { onMessage: { addListener(fn) { listener = fn; } } } };
   const DCE = {
     config: { extensionVersion: 'test' },
@@ -15,6 +16,26 @@ function setup(overrides = {}) {
     logger: { info() {}, warn() {}, error() {}, snapshot: () => [] },
     validation: { runtimeReport: () => ({}) }, ...overrides
   };
+  DCE.operationController = {
+    begin(kind) {
+      if (activeOperation) throw new Error('operation already active');
+      activeOperation = { id: 'test-operation', kind };
+      return activeOperation;
+    },
+    finish(id) {
+      if (activeOperation?.id === id) activeOperation = null;
+    },
+    snapshot() {
+      return activeOperation ? { ...activeOperation } : { active: false };
+    },
+    requestCancellation() {
+      return { accepted: false, reason: 'no-active-operation' };
+    }
+  };
+  const manifest = { id: 'test-adapter', name: 'Test Adapter', version: '1.0.0', platform: 'test', ui: { labels: {}, operations: [] } };
+  const adapter = { manifest, navigation: { ...DCE.discord.navigation, describe() {}, navigate() {}, updateCache: async () => {}, startObserver() {} }, collector: { ...DCE.discord.collector, parse() {}, loadHistorical() {} }, topology: DCE.discord.topology || {}, discovery: {} };
+  DCE.platformRuntime = { initialize: async () => adapter, requireAdapter: () => adapter, manifest: () => manifest };
+  DCE.uiTranslator = { describe: () => ({ adapterId: manifest.id, platform: manifest.platform }) };
   load('content.js', { DCE, chrome });
   return { DCE, listener };
 }
