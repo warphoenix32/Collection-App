@@ -1,15 +1,16 @@
 (() => {
   const DCE = globalThis.DCE;
   DCE.discord.adapterManifest = Object.freeze({
-    id: "discord-reference", name: "Discord Reference Adapter", version: "1.0.0", platform: "discord",
+    id: "discord-reference", name: "Discord Reference Adapter", version: "1.1.0", platform: "discord",
     compatibility: { platform: ">=4.0.0 <5.0.0", conversationSchema: "2.x", topologySchema: "1.x" },
     capabilities: Object.freeze({
       timeline: false, thread: true, forum: true, batch: true, search: false,
-      topology: true, historicalAcquisition: true, media: "metadata-only", bookmarks: false
+      topology: true, historicalAcquisition: true, media: "metadata-only", bookmarks: false,
+      nativeContextPreservation: true, checkpointRecovery: true
     }),
     sources: ["server", "channel", "direct-message", "group-direct-message", "forum-post"],
     entities: ["workspace", "category", "conversation", "message", "participant", "attachment", "thread", "forum"],
-    exports: ["conversation-json", "conversation-markdown", "topology-json", "topology-markdown", "batch-manifest"],
+    exports: ["conversation-json", "topology-json", "batch-manifest"],
     runtimePolicies: ["historicalRuntimeMs", "checkpointEveryCycles", "retryCount", "recovery", "exportBehavior"],
     topologySupport: true, historicalAcquisitionSupport: true,
     provenance: { acquisitionMethod: "browser-dom", confidence: "observed" },

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Collection Platform",
-  "version": "4.0.0",
-  "version_name": "4.0.0 — Knowledge Acquisition Runtime",
+  "version": "4.1.0",
+  "version_name": "4.1.0 - Archival Recovery",
   "description": "Adapter-driven Knowledge Acquisition Runtime with the Discord production reference adapter.",
   "permissions": [
     "activeTab",
@@ -13,6 +13,9 @@
   "host_permissions": [
     "https://discord.com/*"
   ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "content_scripts": [
     {
       "matches": [
@@ -34,6 +37,8 @@
         "src/core/contracts/adapter-contract.js",
         "src/core/sdk/conversation-sdk.js",
         "src/core/diagnostics/logger.js",
+        "src/core/diagnostics/errors.js",
+        "src/core/job-state.js",
         "src/adapters/discord/selectors.js",
         "src/core/cache.js",
         "src/core/profiles/profiles.js",

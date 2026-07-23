@@ -10,5 +10,13 @@ for (const script of scripts) {
   if (!fs.existsSync(filename)) throw new Error(`Missing manifest script: ${script}`);
   new vm.Script(fs.readFileSync(filename, 'utf8'), { filename });
 }
-for (const script of ['popup.js']) new vm.Script(fs.readFileSync(path.join(root, script), 'utf8'), { filename: script });
-console.log(`Static check passed: ${scripts.length + 1} JavaScript files and manifest validated.`);
+const extensionPages = ['popup.js', 'status.js', manifest.background?.service_worker].filter(Boolean);
+for (const script of extensionPages) {
+  const filename = path.join(root, script);
+  if (!fs.existsSync(filename)) throw new Error(`Missing extension script: ${script}`);
+  new vm.Script(fs.readFileSync(filename, 'utf8'), { filename: script });
+}
+for (const page of ['popup.html', 'status.html']) {
+  if (!fs.existsSync(path.join(root, page))) throw new Error(`Missing extension page: ${page}`);
+}
+console.log(`Static check passed: ${scripts.length + extensionPages.length} JavaScript files and manifest validated.`);

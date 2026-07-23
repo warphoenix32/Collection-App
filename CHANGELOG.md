@@ -1,5 +1,17 @@
 # Changelog
 
+## 4.1.0 - Archival Recovery
+
+- Made archival JSON the only collection output and removed collection-intent selection.
+- Added persistent collection job state and a standalone Collection Monitor.
+- Added chunked IndexedDB checkpoints with legacy Chrome-storage fallback.
+- Added partial download, checkpoint resume/discard, diagnostic bundles, and emergency partial export.
+- Excluded pagination waiting from the active historical runtime budget and added a separate no-progress safety window.
+- Added mutation-assisted pagination wakeups, incremental timestamp bounds, and rendered-element parse caching.
+- Preserved Discord-native guild, channel, message, reply, directly observed author IDs, jump links, original ISO timestamps, and timezone offsets.
+- Added structured failure codes and surfaced warnings, stop reasons, and oldest/newest collected timestamps.
+- Advanced Discord Reference Adapter to 1.1.0 without changing the immutable v3.6 LTS baseline.
+
 ## 4.0.0 — Architecture Evolution
 
 - Established independent Collection Platform 4.x and Discord Adapter 1.x versioning.

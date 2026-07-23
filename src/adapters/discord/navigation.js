@@ -41,7 +41,19 @@
     return { acquisitionStrategy: target ? 'navigate' : 'current', type: conversationType, url: location.href,
       workspace: direct ? null : { id: target?.serverId || ids?.serverId || null, name: target?.serverName || null, type: 'server' },
       conversation: { id: target?.channelId || ids?.channelId || null, name: target?.channelName || currentConversationName(), type: conversationType },
-      platformMetadata: { discordPath: location.pathname } };
+      platformMetadata: {
+        discordPath: location.pathname,
+        discordContext: {
+          guildId: target?.serverId || ids?.serverId || null,
+          channelId: target?.channelId || ids?.channelId || null,
+          conversationType,
+          timestampSemantics: "Discord time[datetime] value preserved as ISO 8601; Z means UTC.",
+          limitations: [
+            "Author IDs are null when Discord does not expose direct native evidence.",
+            "Parent channel and thread subtype remain null when not observable from the active client."
+          ]
+        }
+      } };
   }
 
   async function updateNavigationCache() {

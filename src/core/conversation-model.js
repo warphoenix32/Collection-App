@@ -41,7 +41,8 @@
       },
       provenance: {
         adapter: manifest.id,
-        sourceElementId: raw.sourceElementId || null
+        sourceElementId: raw.sourceElementId || null,
+        discordNative: raw.discordNative || null
       }
     };
   }

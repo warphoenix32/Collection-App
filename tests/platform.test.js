@@ -26,7 +26,7 @@ test('Discord adapter self-registers with independent version and canonical runt
   load('src/adapters/discord/register.js', { DCE });
   const definition = DCE.adapterRegistry.get('discord-reference');
   const runtime = definition.createRuntime({ host: {}, manifest: definition.manifest });
-  assert.equal(definition.manifest.version, '1.0.0');
+  assert.equal(definition.manifest.version, '1.1.0');
   assert.equal(definition.manifest.compatibility.platform, '>=4.0.0 <5.0.0');
   assert.equal(runtime.navigation.navigate, navigation.navigateWithinDiscord);
   assert.equal(runtime.collector.loadHistorical, collector.loadOlderMessagesUntil);

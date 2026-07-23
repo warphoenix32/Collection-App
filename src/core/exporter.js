@@ -37,38 +37,113 @@
     return true;
   }
 
-  async function exportConversation(options, source) {
-    const adapter = DCE.platformRuntime.requireAdapter();
-    const startedAt = Date.now();
-    let collectionReport = { complete: true, attempted: false, warnings: [] };
-    if (options.loadOlder && options.startIso) {
-      const runtimePolicy = DCE.runtimePolicies.resolve(options.runtimePolicy || { historicalRuntimeMs: options.maxRuntimeMs });
-      collectionReport = await adapter.collector.loadHistorical(options.startIso, { maxRuntimeMs: runtimePolicy.historicalRuntimeMs });
-    }
-    const rawMessages = adapter.collector.parse()
-      .filter(message => messageInRange(message, options.startIso, options.endIso));
-    if (!rawMessages.length) return { success: false, error: "No messages matched the selected range." };
-
+  function buildAndDownload(rawMessages, options, source, collectionReport, startedAt, filenameSuffix = "") {
     const finishedAt = Date.now();
     const model = DCE.conversationModel.buildConversation({
-      rawMessages, source, options, collectionReport, startedAt, finishedAt
+      rawMessages, source, options: { ...options, format: "json", intent: "archival" },
+      collectionReport, startedAt, finishedAt
     });
-    const isJson = options.format === "json";
-    const payload = isJson ? DCE.renderers.json(model) : DCE.renderers.markdown(model);
-    const outputFilename = filename(isJson ? "json" : "md", model.source);
-    downloadText(payload, outputFilename, isJson ? "application/json" : "text/markdown");
-
+    const outputFilename = filename("json", model.source).replace(/\.json$/, `${filenameSuffix}.json`);
+    downloadText(DCE.renderers.json(model), outputFilename, "application/json");
     return {
       success: true,
       count: model.collection.messageCount,
       participantCount: model.collection.participantCount,
       collectionComplete: model.collection.complete,
       warnings: model.diagnostics.warnings,
+      earliestCollected: model.collection.actualRange.start,
+      latestCollected: model.collection.actualRange.end,
+      stopReason: collectionReport?.stopReason || null,
       outputFilename,
       exportId: model.metadata.exportId,
       source: model.source
     };
   }
 
-  DCE.exporter = { exportConversation, downloadPayload: downloadText };
+  async function exportConversation(options, source) {
+    const adapter = DCE.platformRuntime.requireAdapter();
+    const startedAt = Date.now();
+    options = { ...options, format: "json", intent: "archival" };
+    let collectionReport = { complete: true, attempted: false, warnings: [] };
+    if (options.loadOlder && options.startIso) {
+      const runtimePolicy = DCE.runtimePolicies.resolve(options.runtimePolicy || { historicalRuntimeMs: options.maxRuntimeMs });
+      collectionReport = await adapter.collector.loadHistorical(options.startIso, {
+        maxRuntimeMs: runtimePolicy.historicalRuntimeMs,
+        source,
+        options,
+        jobId: options.jobId
+      });
+    }
+    const rawMessages = adapter.collector.parse()
+      .filter(message => messageInRange(message, options.startIso, options.endIso));
+    if (!rawMessages.length) return { success: false, error: "No messages matched the selected range." };
+    return buildAndDownload(rawMessages, options, source, collectionReport, startedAt);
+  }
+
+  async function exportCheckpoint(checkpoint, reason = "recovery") {
+    if (!checkpoint?.messages?.length) return { success: false, error: "No recoverable messages are available." };
+    const options = { ...(checkpoint.options || {}), format: "json", intent: "archival" };
+    const source = checkpoint.source || {
+      platform: "discord", type: "unknown", acquisitionStrategy: "checkpoint-recovery",
+      url: checkpoint.url, workspace: { id: null, name: null }, conversation: { id: null, name: "recovered-conversation" },
+      platformMetadata: {}
+    };
+    const rawMessages = checkpoint.messages.filter(message => messageInRange(message, options.startIso, options.endIso));
+    const collectionReport = {
+      attempted: true,
+      complete: false,
+      stopReason: checkpoint.stopReason || reason,
+      warnings: [`Partial archival export generated from a recovery checkpoint (${reason}).`],
+      coverage: {
+        status: "partial", startReached: false, confidence: "medium",
+        requestedStart: checkpoint.cutoff || options.startIso || null,
+        earliestAcquired: checkpoint.earliestLoaded || null,
+        latestAcquired: checkpoint.latestLoaded || null
+      },
+      messagesAccumulated: rawMessages.length,
+      cycles: checkpoint.cycles || 0,
+      recoveries: checkpoint.recoveries || 0,
+      resumed: true,
+      resumedFrom: checkpoint.savedAt || null
+    };
+    return { ...buildAndDownload(rawMessages, options, source, collectionReport, Date.parse(checkpoint.savedAt) || Date.now(), "-partial"), partial: true };
+  }
+
+  async function exportEmergencyPartial(options, source, error) {
+    const state = DCE.platformRuntime.requireAdapter().collector.getAcquisitionState?.();
+    if (!state?.messages?.length) return { success: false, partial: false, error: "No messages had been buffered before the failure." };
+    const checkpoint = {
+      messages: state.messages,
+      options,
+      source,
+      savedAt: new Date().toISOString(),
+      cutoff: options.startIso || null,
+      earliestLoaded: state.earliestCollected,
+      latestLoaded: state.latestCollected,
+      stopReason: "exception"
+    };
+    await DCE.cache.writeAcquisitionCheckpoint({ version: 3, complete: false, url: location.href, ...checkpoint });
+    return exportCheckpoint(checkpoint, error?.message || "unexpected-failure");
+  }
+
+  function exportDiagnosticBundle(details = {}) {
+    const payload = {
+      schemaName: "collection-platform-diagnostic-bundle",
+      schemaVersion: "1.0.0",
+      generatedAt: new Date().toISOString(),
+      platformVersion: DCE.config.platformVersion,
+      adapterVersion: DCE.config.adapterVersion,
+      page: { url: location.href, title: document.title },
+      runtime: DCE.validation.runtimeReport(),
+      job: details.job || null,
+      checkpoint: details.checkpoint || null,
+      failure: details.failure || null,
+      logs: DCE.logger.snapshot()
+    };
+    const outputFilename = `collection-platform-diagnostics-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
+    downloadText(JSON.stringify(payload, null, 2), outputFilename, "application/json");
+    return { success: true, outputFilename };
+  }
+
+  DCE.exporter = { exportConversation, exportCheckpoint, exportEmergencyPartial, exportDiagnosticBundle, downloadPayload: downloadText };
 })();

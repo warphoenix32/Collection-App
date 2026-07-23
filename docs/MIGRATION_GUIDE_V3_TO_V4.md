@@ -1,5 +1,13 @@
 # Migration Guide — Discord v3.6 LTS to Platform v4
 
+## Version 4.1 stabilization
+
+Collection Platform 4.1 and Discord Adapter 1.1 add archival-only JSON collection, native-context evidence, a persistent monitor, and chunked recovery checkpoints. The immutable v3.6 LTS baseline remains unchanged.
+
+Saved profiles that request Markdown or a non-archival intent execute as archival JSON. Existing Markdown remains a valid historical artifact, and the renderer remains in source for compatibility, but Markdown is no longer the canonical ingestion boundary.
+
+Version 2 checkpoints stored in Chrome local storage are still readable. New version 3 checkpoints are stored in IndexedDB chunks and include source/options metadata for exact resume and partial export.
+
 ## Recovery baseline
 
 The exact v3.6.0 production source is tag `discord-reference-adapter-v3.6.0-lts` and branch `main`. Platform evolution occurs on `development`.

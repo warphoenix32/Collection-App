@@ -25,7 +25,7 @@
 </head>
 <body>
   <h1>Collection Platform</h1>
-  <div class="version">Knowledge Acquisition Runtime · v4.0.0</div>
+  <div class="version">Knowledge Acquisition Runtime · v4.1.0</div>
 
   <label for="sourceMode">Operation</label>
   <select id="sourceMode">
@@ -35,16 +35,6 @@
     <option value="profile">Saved profile</option>
   </select>
   <div class="hint" id="sourceHint"></div>
-
-  <label for="intent">Collection intent</label>
-  <select id="intent">
-    <option value="archival" selected>Archival</option>
-    <option value="research">Research</option>
-    <option value="historical">Historical</option>
-    <option value="monitoring">Monitoring</option>
-    <option value="compliance">Compliance</option>
-    <option value="incident-response">Incident Response</option>
-  </select>
 
   <div id="navigationFields" hidden>
     <label for="server">Server</label>
@@ -102,14 +92,15 @@
       <option value="custom">Custom minutes</option>
     </select>
     <input id="runtimeCustomMinutes" type="number" min="5" max="1440" step="5" value="180" hidden>
-    <div class="hint">The collector completes the active loading cycle before stopping. The runtime limit applies per conversation, including each batch target.</div>
+    <div class="hint">The limit counts active collection work. Discord pagination waits do not consume it. A recoverable partial archive is checkpointed during collection.</div>
   </div>
 
-  <label for="format">Output</label>
-  <select id="format"><option value="markdown">Markdown (.md)</option><option value="json">JSON (.json)</option></select>
+  <label>Output</label>
+  <div class="hint">Canonical archival JSON (.json), including native identifiers, UTC timestamps, provenance, and recovery coverage.</div>
   <label class="check"><input id="loadOlder" type="checkbox" checked>Load older messages when a time range is selected</label>
 
   <button id="exportButton" disabled>Execute Collection</button>
+  <button id="monitorButton" class="secondary">Open Collection Monitor</button>
   <button id="topologyButton" class="secondary" disabled>Export Current Server Topology</button>
   <div class="hint">Observes topology metadata already visible to the active platform client. It does not navigate or collect messages.</div>
   <button id="refreshButton" class="secondary">Refresh Navigation Cache</button>

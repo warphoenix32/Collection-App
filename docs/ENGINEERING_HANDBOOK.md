@@ -14,7 +14,10 @@ Requirements precede implementation. Discovery precedes architecture. Architectu
 - Core modules cannot query source-native DOM or call source APIs.
 - Adapters own detection, parsing, navigation, discovery, and native terminology.
 - Runtime policies are mission inputs; adapter constants may exist only as compatibility defaults.
-- Every acquisition declares intent and produces provenance.
+- Every acquisition defaults to immutable archival intent and produces provenance. Alternative downstream uses do not mutate the acquisition record.
+- Canonical acquisition output is loss-preserving JSON. Human-readable Markdown is a downstream projection, not an ingestion artifact.
+- Long-running collectors checkpoint incrementally, surface explicit stop reasons, and keep partial acquisitions exportable.
+- Native identifiers are recorded only from direct source evidence; absent values remain `null`.
 - Conversation Schema changes require an independent schema mission.
 - New adapters must pass manifest, detection, capability, isolation, and regression gates.
 

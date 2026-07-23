@@ -1,8 +1,10 @@
-# Collection Platform v4.0.0
+# Collection Platform v4.1.0
 
 ## BLUF
 
-Collection Platform is an adapter-driven Knowledge Acquisition Runtime. Discord Reference Adapter v1.0.0 is the first production adapter and preserves the complete Discord v3.6.0 LTS behavior baseline.
+Collection Platform is an adapter-driven Knowledge Acquisition Runtime. Discord Reference Adapter v1.1.0 is the first production adapter and preserves the Discord v3.6.0 LTS recovery baseline.
+
+Version 4.1 makes archival JSON the canonical acquisition artifact. The collection popup no longer asks for output format or intent: every collection is archival and retains native identifiers, ISO timestamps, timezone-offset evidence, provenance, diagnostics, and honest coverage. Markdown remains a derived presentation format outside the collection path.
 
 Platform detection selects the highest-confidence installed adapter. The adapter registry exposes capabilities, sources, entities, exports, runtime policies, topology support, and native UI terminology. Conversation Schema 2.x remains operational while Knowledge Object 1.0 is additive.
 
@@ -19,13 +21,14 @@ Experimental work does not occur on `main`.
 - Single cached-channel navigation and restoration
 - Sequential batch collection with retry and continue-on-error
 - Saved collection profiles
-- JSON and Markdown exports using Conversation Schema 2.0.0
+- Canonical archival JSON exports using Conversation Schema 2.0.0
 - Reliable historical acquisition that accumulates messages throughout Discord DOM virtualization
-- Adaptive waits, recovery actions, navigation retries, checkpoints, and honest coverage metadata
+- Event-assisted pagination waits, rotating recovery actions, navigation retries, chunked IndexedDB checkpoints, and honest coverage metadata
+- Persistent Collection Monitor with oldest/newest timestamps, partial download, checkpoint resume, discard, and diagnostic bundle actions
 - Relative recall presets from 24 hours through three years
 - Exact custom start and end timestamps
 - Configurable historical runtime from five minutes through 24 hours, with a three-hour default
-- Server Topology Discovery with independent JSON and Markdown inventory exports
+- Server Topology Discovery with canonical JSON inventory exports
 
 ## Server Topology Discovery
 
@@ -50,7 +53,9 @@ Targeted Collection/native-search automation is not included. It was retired bec
 
 Discord virtualizes messages: older rendered nodes can disappear as additional history loads. v3.5.1 parses and accumulates every rendered window during acquisition, then deduplicates the complete in-session buffer before export.
 
-The adapter performs recovery when Discord stalls and continues until it reaches the requested start date or the operator-selected runtime budget. The default budget is three hours per conversation and can be set from five minutes through 24 hours. Runtime expiration is evaluated between loading cycles so the active cycle completes cleanly. Acquisition is not terminated by attempt count, throughput, or efficiency metrics. An incomplete result remains exportable but is explicitly reported as partial with coverage metadata and warnings.
+The adapter performs recovery when Discord stalls and continues until it reaches the requested start date or the operator-selected active-runtime budget. Discord pagination waits do not consume that active budget. A separate 30-minute no-progress safety window prevents a permanently unresponsive page from running forever. The default active budget is three hours per conversation and can be set from five minutes through 24 hours.
+
+Every ten cycles, the acquisition buffer is saved in 500-message IndexedDB chunks. If collection ends because of a runtime limit, no-progress condition, parser/export exception, popup closure, or later browser restart, the monitor can export the partial JSON or resume the exact incomplete checkpoint. A browser process that crashes cannot download at the instant of failure, so restart recovery is the durability boundary.
 
 ## Architectural constraints
 

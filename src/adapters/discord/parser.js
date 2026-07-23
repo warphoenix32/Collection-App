@@ -146,16 +146,33 @@
       ? { displayName: explicitDisplayName || inheritedAuthor?.displayName || null, userId: explicitUserId || inheritedAuthor?.userId || null, inferred: false }
       : { displayName: inheritedAuthor?.displayName || null, userId: inheritedAuthor?.userId || null, inferred: Boolean(inheritedAuthor) });
     const idMatch = messageElement.id.match(/chat-messages-(?:\d+)-(\d+)/);
+    const messageId = idMatch ? idMatch[1] : (messageElement.id || null);
     const reply = parseReply(messageElement);
     const content = cleanContent(contentNode);
     const attachments = parseAttachments(messageElement);
     const excludedMedia = detectExcludedMedia(messageElement);
+    const locationIds = DCE.discord.navigation.currentLocationIds();
+    const timestampOffset = timestamp ? (timestamp.match(/(Z|[+-]\d{2}:\d{2})$/)?.[1] || null) : null;
+    const jumpLink = messageId && locationIds?.channelId
+      ? `https://discord.com/channels/${locationIds.serverId || "@me"}/${locationIds.channelId}/${messageId}`
+      : null;
     return {
-      messageId: idMatch ? idMatch[1] : messageElement.id || null,
+      messageId,
       sourceElementId: messageElement.id || null,
       timestamp, author, content, contentKind: contentKind(content, attachments, excludedMedia), replyTo: reply.preview, replyMessageId: reply.messageId,
       mentions: parseMentions(contentNode), edited: Boolean(messageElement.querySelector(S.edited)) || /\(edited\)/i.test(messageElement.innerText || ""),
-      deletedReference: /original message was deleted/i.test(reply.preview || ""), attachments, system
+      deletedReference: /original message was deleted/i.test(reply.preview || ""), attachments, system,
+      discordNative: {
+        messageId,
+        guildId: locationIds?.serverId || null,
+        channelId: locationIds?.channelId || null,
+        authorId: author.inferred ? null : (author.userId || null),
+        replyMessageId: reply.messageId || null,
+        jumpLink,
+        timestampOriginal: timestamp,
+        timestampOffset,
+        sourceElementId: messageElement.id || null
+      }
     };
   }
 

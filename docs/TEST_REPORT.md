@@ -1,6 +1,15 @@
 # Test Report — Stabilization v1.0
 
-## Tests added
+## Collection Platform 4.1.0 stabilization
+
+- `npm.cmd run check`: passed.
+- Static validation: 43 JavaScript files plus manifest and extension pages.
+- Node regression suite: 20/20 passed.
+- Added coverage for archival-only JSON UI, structured failure codes, persistent job bounds, background checkpoint transport, and Discord-native evidence retention.
+- `git diff --check`: passed.
+- Live authenticated Discord pagination and recovery remain required acceptance gates before production promotion.
+
+## Earlier tests
 
 - Manifest parsing, declared-file existence, and syntax validation for 22 JavaScript entry files.
 - Acquisition checkpoint write/read/clear regression test.

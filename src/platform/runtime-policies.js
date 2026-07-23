@@ -2,7 +2,7 @@
   const DCE = globalThis.DCE;
   const defaults = Object.freeze({
     historicalRuntimeMs: DCE.config.acquisitionDefaultMaxRuntimeMs,
-    checkpointEveryCycles: DCE.config.loadOlderProgressLogInterval,
+    checkpointEveryCycles: DCE.config.checkpointEveryCycles,
     retryCount: DCE.config.batchItemRetryCount,
     recovery: "adaptive",
     exportBehavior: "download"

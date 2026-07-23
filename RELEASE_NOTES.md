@@ -1,6 +1,16 @@
-# Release Notes — Collection Platform v4.0.0
+# Release Notes — Collection Platform v4.1.0
 
-## Architecture Evolution
+## v4.1.0 Archival Recovery
+
+Collections now produce one canonical JSON artifact with archival provenance. Native Discord identifiers and timestamp evidence are retained when directly observable; unknown values remain `null`.
+
+Long-running acquisition has a persistent monitor, chunked IndexedDB checkpoints, adaptive pagination waits, checkpoint resume, partial-download controls, and structured diagnostics. Pagination latency does not consume the active runtime budget. Unexpected failures attempt an immediate partial JSON export, and incomplete checkpoints are announced when the popup next opens.
+
+Automated validation covers syntax, manifests, archival-only UI behavior, checkpoint transport, structured errors, persistent job bounds, existing platform contracts, historical restore, topology isolation, and large-message deduplication. Live authenticated Discord acceptance remains required before production promotion.
+
+---
+
+## Previous v4.0.0 Architecture Evolution
 
 Discord Reference Adapter v3.6.0 LTS is frozen at Git tag `discord-reference-adapter-v3.6.0-lts`. Its platform release identity is now Discord Adapter v1.0.0, compatible with Collection Platform v4.x.
 

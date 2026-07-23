@@ -36,6 +36,21 @@ The browser-extension host exposes context, storage, and time. Detection and reg
 
 ## Pipeline boundaries
 
+### Durable archival execution
+
+The browser content runtime owns authenticated Discord DOM acquisition. A small persisted job record lets the popup-independent Collection Monitor report progress. The extension service worker owns chunked IndexedDB checkpoint persistence; the content runtime can rebuild an incomplete conversation from those chunks after popup closure or browser restart.
+
+```text
+Discord DOM -> Acquisition Buffer -> Chunked Checkpoint
+                    |                       |
+                    v                       v
+            Canonical JSON Export    Resume / Partial JSON
+```
+
+Pagination wait time and active collection work are tracked separately. Mutation events wake the collector when Discord renders older messages. Rotating recovery continues through ordinary delays; only the operator-selected active-work budget or the independent no-progress safety window ends acquisition.
+
+The model retains adapter-native evidence under `source.platformMetadata.discordContext` and `message.provenance.discordNative`. Core fields remain platform-neutral.
+
 ### Discovery
 
 Discovery identifies source objects already exposed to the authenticated client. The Discord adapter's basic discovery supplies servers and navigable channels for operator selection.

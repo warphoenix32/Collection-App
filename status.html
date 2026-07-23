@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Collection Monitor</title>
+  <style>
+    :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+    body { max-width: 920px; margin: 32px auto; padding: 0 20px; background: Canvas; color: CanvasText; }
+    h1 { margin-bottom: 4px; } .muted { opacity: .7; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 24px 0; }
+    .card { padding: 16px; border: 1px solid #8885; border-radius: 10px; background: #8881; }
+    .label { font-size: 12px; font-weight: 700; opacity: .7; text-transform: uppercase; }
+    .value { margin-top: 5px; font-size: 16px; overflow-wrap: anywhere; }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    button { padding: 10px 14px; border: 0; border-radius: 7px; background: #5865f2; color: white; font-weight: 700; cursor: pointer; }
+    button.secondary { background: #8883; color: CanvasText; border: 1px solid #8886; }
+    button.danger { background: #b3261e; } button:disabled { opacity: .5; cursor: not-allowed; }
+    #notice { margin-top: 20px; padding: 12px; min-height: 24px; white-space: pre-wrap; border-radius: 8px; background: #8881; }
+  </style>
+</head>
+<body>
+  <h1>Collection Monitor</h1>
+  <div class="muted">Persistent status and recovery for archival JSON collection · v4.1.0</div>
+  <div class="grid">
+    <div class="card"><div class="label">Status</div><div class="value" id="jobStatus">Loading…</div></div>
+    <div class="card"><div class="label">Stage / stop reason</div><div class="value" id="stage">—</div></div>
+    <div class="card"><div class="label">Messages buffered</div><div class="value" id="messages">0</div></div>
+    <div class="card"><div class="label">Oldest collected (UTC)</div><div class="value" id="oldest">—</div></div>
+    <div class="card"><div class="label">Newest collected (UTC)</div><div class="value" id="newest">—</div></div>
+    <div class="card"><div class="label">Last progress / checkpoint</div><div class="value" id="progress">—</div></div>
+    <div class="card"><div class="label">Cycles / recoveries</div><div class="value" id="cycles">0 / 0</div></div>
+    <div class="card"><div class="label">Requested range</div><div class="value" id="range">—</div></div>
+  </div>
+  <div class="actions">
+    <button id="refresh">Refresh</button>
+    <button id="partial" class="secondary">Download Partial JSON</button>
+    <button id="resume" class="secondary">Resume Checkpoint</button>
+    <button id="diagnostics" class="secondary">Download Diagnostics</button>
+    <button id="discard" class="danger">Discard Checkpoint</button>
+  </div>
+  <div id="notice">Finding an open Discord tab…</div>
+  <script src="status.js"></script>
+</body>
+</html>
